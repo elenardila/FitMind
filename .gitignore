@@ -1,0 +1,34 @@
+# Dependencias
+node_modules/
+
+# Compilados / builds
+dist/
+build/
+
+# Configuración de entorno (¡nunca subas tus claves!)
+.env
+.env.local
+.env.development
+.env.production
+
+# Cachés / logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vscode/
+.idea/
+.DS_Store
+
+# Supabase local (si llegas a usar CLI)
+supabase/.temp/
+supabase/.branches/
+supabase/migrations/.history/
+
+# Sistema operativo
+Thumbs.db
+desktop.ini
+
+# Otros
+*.bak
+*.tmp
