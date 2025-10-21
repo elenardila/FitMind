@@ -57,7 +57,7 @@ fitmind/
 
 ```bash
 
-git clone https://github.com/<TU_USUARIO>/fitmind.git
+git clone https://github.com/elenardila/fitmind.git
 cd fitmind
 ```
 
@@ -68,19 +68,7 @@ cd fitmind
 npm install
 ```
 
-### 3️⃣ Configurar variables de entorno
-
-Crea un archivo `.env.local` en la raíz del proyecto con tu configuración de Supabase:
-
-```bash
-
-VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
-VITE_SUPABASE_ANON_KEY=tu_clave_publica
-```
-
-🔐 Nota: no subas `.env.local` al repositorio.
-
-### 4️⃣ Ejecutar el entorno de desarrollo
+### 3️⃣ Ejecutar el entorno de desarrollo
 
 ```bash
 
