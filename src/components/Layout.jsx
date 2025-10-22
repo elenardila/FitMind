@@ -1,14 +1,30 @@
 import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 export default function Layout({ children }) {
+    const { perfil, logout, session } = useAuth()
+
     return (
         <>
             <nav className="app-nav">
                 <div className="nav-inner">
                     <Link to="/" className="nav-title">FitMind</Link>
                     <div className="nav-actions">
-                        <Link to="/login" className="btn-ghost">Iniciar sesión</Link>
-                        <Link to="/control" className="btn-primary">Panel</Link>
+                        {session ? (
+                            <>
+                <span className="text-sm mr-2">
+                  {perfil?.nombre ? `Hola, ${perfil.nombre}` : 'Conectado'}
+                    {perfil?.es_admin ? ' · Admin' : ''}
+                </span>
+                                <Link to="/control" className="btn-ghost">Panel</Link>
+                                <button onClick={logout} className="btn-primary">Salir</button>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/login" className="btn-ghost">Iniciar sesión</Link>
+                                <Link to="/login" className="btn-primary">Registrarse</Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </nav>

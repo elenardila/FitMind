@@ -23,3 +23,5 @@
     .card { @apply rounded-xl shadow-lg shadow-black/5 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10; }
     .card-pad { @apply p-6 md:p-8; }
 }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px) scale(.98); } to { opacity: 1; transform: none; } }
