@@ -5,7 +5,7 @@ node_modules/
 dist/
 build/
 
-# Configuración de entorno (¡nunca subas tus claves!)
+# Configuración de entorno
 .env
 .env.local
 .env.development
@@ -20,7 +20,7 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 
-# Supabase local (si llegas a usar CLI)
+# Supabase local
 supabase/.temp/
 supabase/.branches/
 supabase/migrations/.history/

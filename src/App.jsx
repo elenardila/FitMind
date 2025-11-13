@@ -9,6 +9,8 @@ import Politica from './pages/Politica.jsx'
 import NotFound from './pages/NotFound.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 import RequireSubscription from './components/RequireSubscription.jsx'
+import Perfil from './pages/Perfil.jsx'
+import NuevaClave from './pages/NuevaClave.jsx'
 
 export default function App() {
     return (
@@ -47,7 +49,15 @@ export default function App() {
                         </RequireAuth>
                     }
                 />
-
+                <Route
+                    path="/perfil"
+                    element={
+                        <RequireAuth>
+                            <Perfil />
+                        </RequireAuth>
+                    }
+                />
+                <Route path="/nueva-clave" element={<NuevaClave />} />
                 <Route path="/politica" element={<Politica/>}/>
                 <Route path="*" element={<NotFound/>}/>
             </Routes>
