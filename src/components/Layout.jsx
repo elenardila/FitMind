@@ -33,7 +33,7 @@ export default function Layout({ children }) {
               </>
             ) : (
               <>
-                <Link to="/control" className="btn-ghost">Panel</Link>
+                <Link to="/control" className="btn-ghost">Dashboard</Link>
 
                 <button
                   type="button"
