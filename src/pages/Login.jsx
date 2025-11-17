@@ -6,13 +6,25 @@ import Modal from '../components/Modal'
 
 export default function Login() {
     const { login, register, resendConfirmEmail, updatePerfil } = useAuth()
-    const [modo, setModo] = useState('login') // 'login' | 'registro'
+
+    const navigate = useNavigate()
+    const location = useLocation()
+
+    // 👇 nuevo: leemos el modo inicial de la query ?mode=registro
+    const searchParams = new URLSearchParams(location.search)
+    const initialMode =
+        searchParams.get('mode') === 'registro'
+            ? 'registro'
+            : 'login'
+
+    const [modo, setModo] = useState(initialMode) // 'login' | 'registro'
 
     // Campos generales
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [password2, setPassword2] = useState('')
     const [aceptaTerminos, setAceptaTerminos] = useState(false)
+    const [aceptaLegal, setAceptaLegal] = useState(false) // 👈 Términos y condiciones extra si quieres separar
 
     // Campos de perfil (solo para registro)
     const [nombre, setNombre] = useState('')
@@ -36,8 +48,6 @@ export default function Login() {
     const [modalVerificacionOpen, setModalVerificacionOpen] = useState(false)
     const [modalExisteOpen, setModalExisteOpen] = useState(false)
 
-    const navigate = useNavigate()
-    const location = useLocation()
     const redirectTo = location.state?.from?.pathname || '/control'
 
     // 🔎 Validaciones de email y password
@@ -48,17 +58,31 @@ export default function Login() {
     const passValida = password.length >= 6 && !/\s/.test(password)
     const passCoincide = modo === 'login' ? true : password === password2
 
+    // 👇 si estás en registro: contraseña ok + términos aceptados
     const puedeEnviar = useMemo(() => {
         if (loading) return false
         if (!emailValido) return false
         if (modo === 'login') return passValida
-        return passValida && passCoincide && aceptaTerminos
-    }, [loading, emailValido, passValida, passCoincide, aceptaTerminos, modo])
+        // modo registro:
+        return (
+            passValida &&
+            passCoincide &&
+            aceptaTerminos &&   // 👈 obligatorio
+            aceptaLegal         // 👈 segundo checkbox obligatorio, si lo quieres
+        )
+    }, [loading, emailValido, passValida, passCoincide, aceptaTerminos, aceptaLegal, modo])
+
+    // 👇 si cambia la URL (por ejemplo, entras desde /login?mode=registro) cambiamos el modo
+    useEffect(() => {
+        const params = new URLSearchParams(location.search)
+        const modeParam = params.get('mode') === 'registro' ? 'registro' : 'login'
+        setModo(modeParam)
+    }, [location.search])
 
     useEffect(() => {
         setError('')
         setOk('')
-    }, [modo, email, password, password2, aceptaTerminos])
+    }, [modo, email, password, password2, aceptaTerminos, aceptaLegal])
 
     // 📩 Envío de formulario
     const handleSubmit = async (e) => {
@@ -73,16 +97,24 @@ export default function Login() {
 
             if (modo === 'login') {
                 await login(correo, password)
-                // navegación inmediata
                 navigate(redirectTo, { replace: true })
-                // failsafe: libera loading por si el unmount tarda
                 setLoading(false)
                 return
             }
 
             // ---- registro ----
-            if (!aceptaTerminos) { setError('Debes aceptar los Términos y Condiciones.'); return }
-            if (!passCoincide)    { setError('Las contraseñas no coinciden.'); return }
+            if (!aceptaTerminos) {
+                setError('Debes aceptar la Política de privacidad y de tratamiento de datos.')
+                return
+            }
+            if (!aceptaLegal) {
+                setError('Debes aceptar los Términos y Condiciones de uso.')
+                return
+            }
+            if (!passCoincide) {
+                setError('Las contraseñas no coinciden.')
+                return
+            }
 
             await register(correo, password)
 
@@ -109,10 +141,11 @@ export default function Login() {
             }
 
             setModo('login')
-            setPassword(''); setPassword2('')
+            setPassword('')
+            setPassword2('')
 
         } catch (err) {
-            console.error('Auth error:', err) // 👈 ver el mensaje real en consola
+            console.error('Auth error:', err)
             const msg = (err?.message || '').toLowerCase()
 
             if (modo === 'login' && (msg.includes('email not confirmed') || msg.includes('email_not_confirmed'))) {
@@ -274,22 +307,39 @@ export default function Login() {
                         </div>
                     )}
 
-                    {/* ✅ Términos */}
+                    {/* ✅ Términos / Legal (solo registro) */}
                     {modo === 'registro' && (
-                        <label className="flex items-start gap-3 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={aceptaTerminos}
-                                onChange={(e) => setAceptaTerminos(e.target.checked)}
-                                className="mt-1 rounded border-slate-300 dark:border-white/20"
-                            />
-                            <span>
-                Acepto los{' '}
-                                <Link to="/politica" className="underline hover:text-brand">
-                  Términos y Condiciones / Política de privacidad
-                </Link>.
-              </span>
-                        </label>
+                        <div className="space-y-2 text-sm">
+                            <label className="flex items-start gap-3">
+                                <input
+                                    type="checkbox"
+                                    checked={aceptaTerminos}
+                                    onChange={(e) => setAceptaTerminos(e.target.checked)}
+                                    className="mt-1 rounded border-slate-300 dark:border-white/20"
+                                />
+                                <span>
+                                    Acepto la{' '}
+                                    <Link to="/politica" className="underline hover:text-brand">
+                                        Política de privacidad y tratamiento de datos
+                                    </Link>.
+                                </span>
+                            </label>
+
+                            <label className="flex items-start gap-3">
+                                <input
+                                    type="checkbox"
+                                    checked={aceptaLegal}
+                                    onChange={(e) => setAceptaLegal(e.target.checked)}
+                                    className="mt-1 rounded border-slate-300 dark:border-white/20"
+                                />
+                                <span>
+                                    Acepto los{' '}
+                                    <Link to="/politica" className="underline hover:text-brand">
+                                        Términos y Condiciones de uso
+                                    </Link>.
+                                </span>
+                            </label>
+                        </div>
                     )}
 
                     {/* Mensajes */}
@@ -297,11 +347,19 @@ export default function Login() {
                     {ok && <p className="text-sm text-emerald-600 dark:text-emerald-400">{ok}</p>}
 
                     {/* Botones */}
-                    <button type="submit" disabled={!puedeEnviar} className={`btn-primary w-full ${!puedeEnviar ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                    <button
+                        type="submit"
+                        disabled={!puedeEnviar}
+                        className={`btn-primary w-full ${!puedeEnviar ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    >
                         {loading ? 'Cargando…' : modo === 'login' ? 'Entrar' : 'Registrarme'}
                     </button>
 
-                    <button type="button" className="btn-ghost w-full" onClick={() => setModo(modo === 'login' ? 'registro' : 'login')}>
+                    <button
+                        type="button"
+                        className="btn-ghost w-full"
+                        onClick={() => setModo(modo === 'login' ? 'registro' : 'login')}
+                    >
                         {modo === 'login' ? 'Crear cuenta nueva' : 'Ya tengo cuenta'}
                     </button>
                 </form>

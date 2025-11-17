@@ -4,13 +4,13 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Error: variables de entorno de Supabase no definidas.')
+  console.error('Error: variables de entorno de Supabase no definidas.')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+    persistSession: false,
+    autoRefreshToken: false,
     detectSessionInUrl: true,
   },
 })

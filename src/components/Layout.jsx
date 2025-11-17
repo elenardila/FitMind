@@ -19,16 +19,17 @@ export default function Layout({ children }) {
           <Link to="/" className="nav-title">FitMind</Link>
 
           <div className="nav-actions">
-            {/* 🔁 Mejor separar loading / invitado / logueado */}
             {loading ? (
-              // mientras se comprueba la sesión, no enseñamos nada “firme”
               <span className="text-sm text-text-muted dark:text-white/70">
                 Comprobando sesión…
               </span>
             ) : !isLogged ? (
               <>
                 <Link to="/login" className="btn-ghost">Iniciar sesión</Link>
-                <Link to="/login" className="btn-primary">Registrarse</Link>
+                {/* 👇 aquí el cambio importante */}
+                <Link to="/login?mode=registro" className="btn-primary">
+                  Registrarse
+                </Link>
               </>
             ) : (
               <>
@@ -37,7 +38,7 @@ export default function Layout({ children }) {
                 <button
                   type="button"
                   onClick={() => navigate('/perfil')}
-                  className="flex items-center gap-3 px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg:white/10"
+                  className="flex items-center gap-3 px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
                 >
                   <img
                     src={avatarSrc}
@@ -52,7 +53,6 @@ export default function Layout({ children }) {
 
                 <button
                   onClick={async () => {
-                    // 🔐 cierre de sesión + navegación garantizada
                     try {
                       await logout()
                     } finally {

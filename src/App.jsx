@@ -8,9 +8,9 @@ import Entrenamiento from './pages/Entrenamiento.jsx'
 import Politica from './pages/Politica.jsx'
 import NotFound from './pages/NotFound.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
-import RequireSubscription from './components/RequireSubscription.jsx'
 import Perfil from './pages/Perfil.jsx'
 import NuevaClave from './pages/NuevaClave.jsx'
+import AuthCallback from './pages/AuthCallback.jsx'
 
 export default function App() {
     return (
@@ -19,6 +19,7 @@ export default function App() {
                 <Route path="/" element={<Home/>}/>
                 <Route path="/login" element={<Login/>}/>
 
+                <Route path="/auth/callback" element={<AuthCallback/>}/>
                 <Route
                     path="/control"
                     element={
@@ -32,9 +33,7 @@ export default function App() {
                     path="/dieta"
                     element={
                         <RequireAuth>
-                            <RequireSubscription>
                                 <Dieta/>
-                            </RequireSubscription>
                         </RequireAuth>
                     }
                 />
@@ -43,9 +42,7 @@ export default function App() {
                     path="/entrenamiento"
                     element={
                         <RequireAuth>
-                            <RequireSubscription>
                                 <Entrenamiento/>
-                            </RequireSubscription>
                         </RequireAuth>
                     }
                 />

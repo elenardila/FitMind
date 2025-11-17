@@ -6,22 +6,79 @@ import {
   obtenerUltimoPlan,
   obtenerPlanes,
   eliminarPlan,
-  actualizarPlan
+  actualizarPlan,
 } from '../lib/planesService'
+import { generarDietaGemini } from '../lib/geminiClient'
 
-// Datos base (fallback si no hay nada en BD)
+// Datos base (fallback si algo falla con la IA o no hay nada)
 const semanaMock = [
-  { dia: 'Lun', kcal: 2100, comidas: ['Desayuno: Avena y fruta', 'Comida: Pollo + quinoa', 'Cena: Tortilla y ensalada'] },
-  { dia: 'Mar', kcal: 2050, comidas: ['Desayuno: Yogur + granola', 'Comida: Lentejas', 'Cena: Salmón al horno'] },
-  { dia: 'Mié', kcal: 2080, comidas: ['Desayuno: Tostadas + aguacate', 'Comida: Arroz + pavo', 'Cena: Crema de calabaza'] },
-  { dia: 'Jue', kcal: 2120, comidas: ['Desayuno: Batido proteico', 'Comida: Pasta integral', 'Cena: Wok de verduras'] },
-  { dia: 'Vie', kcal: 2000, comidas: ['Desayuno: Avena + cacao', 'Comida: Garbanzos', 'Cena: Huevo + verduras'] },
-  { dia: 'Sáb', kcal: 2200, comidas: ['Desayuno: Tortitas', 'Comida: Paella mixta', 'Cena: Ensalada completa'] },
-  { dia: 'Dom', kcal: 2150, comidas: ['Desayuno: Tostadas francesas', 'Comida: Pollo asado', 'Cena: Crema + yogur'] }
+  {
+    dia: 'Lunes',
+    kcal: 2100,
+    comidas: [
+      'Desayuno: Avena y fruta',
+      'Comida: Pollo + quinoa',
+      'Cena: Tortilla y ensalada',
+    ],
+  },
+  {
+    dia: 'Martes',
+    kcal: 2050,
+    comidas: [
+      'Desayuno: Yogur + granola',
+      'Comida: Lentejas',
+      'Cena: Salmón al horno',
+    ],
+  },
+  {
+    dia: 'Miércoles',
+    kcal: 2080,
+    comidas: [
+      'Desayuno: Tostadas + aguacate',
+      'Comida: Arroz + pavo',
+      'Cena: Crema de calabaza',
+    ],
+  },
+  {
+    dia: 'Jueves',
+    kcal: 2120,
+    comidas: [
+      'Desayuno: Batido proteico',
+      'Comida: Pasta integral',
+      'Cena: Wok de verduras',
+    ],
+  },
+  {
+    dia: 'Viernes',
+    kcal: 2000,
+    comidas: [
+      'Desayuno: Avena + cacao',
+      'Comida: Garbanzos',
+      'Cena: Huevo + verduras',
+    ],
+  },
+  {
+    dia: 'Sábado',
+    kcal: 2200,
+    comidas: [
+      'Desayuno: Tortitas',
+      'Comida: Paella mixta',
+      'Cena: Ensalada completa',
+    ],
+  },
+  {
+    dia: 'Domingo',
+    kcal: 2150,
+    comidas: [
+      'Desayuno: Tostadas francesas',
+      'Comida: Pollo asado',
+      'Cena: Crema + yogur',
+    ],
+  },
 ]
 
 export default function Dieta() {
-  const { session } = useAuth()
+  const { session, perfil } = useAuth()
   const userId = session?.user?.id
 
   const [semana, setSemana] = useState(semanaMock)
@@ -32,8 +89,9 @@ export default function Dieta() {
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
 
-  const kcalTot = semana.reduce((acc, d) => acc + d.kcal, 0)
+  const kcalTot = semana.reduce((acc, d) => acc + (d.kcal || 0), 0)
 
+  // Cargar último plan + historial de dietas
   useEffect(() => {
     const cargar = async () => {
       if (!userId) return
@@ -43,7 +101,7 @@ export default function Dieta() {
         const ultimo = await obtenerUltimoPlan(userId, 'dieta')
         if (ultimo) {
           setPlanActual(ultimo)
-          setSemana(ultimo.datos) // datos debe ser el array de días
+          setSemana(ultimo.datos || semanaMock) // datos es el array de días
         }
         const lista = await obtenerPlanes(userId, 'dieta')
         setHistorial(lista)
@@ -58,13 +116,31 @@ export default function Dieta() {
   }, [userId])
 
   const onRegenerar = async () => {
-    // Por ahora usamos el mock. Más adelante lo sustituyes por Gemini.
-    if (!userId) return
+    if (!userId) {
+      setError('Debes iniciar sesión para generar tu plan de dieta.')
+      return
+    }
+
+    if (!perfil) {
+      setError('Completa tu perfil antes de generar la dieta.')
+      return
+    }
+
     setCargando(true)
     setError('')
     setMensaje('')
+
     try {
-      const nuevaSemana = semanaMock // o llamar a tu IA
+      console.log('[Dieta] Generando plan de dieta para perfil:', perfil)
+      const nuevaSemana = await generarDietaGemini(perfil)
+      console.log('[Dieta] Dieta generada:', nuevaSemana)
+
+      if (!Array.isArray(nuevaSemana) || nuevaSemana.length === 0) {
+        setError('La IA no ha devuelto un plan de dieta válido.')
+        setSemana(semanaMock)
+        return
+      }
+
       setSemana(nuevaSemana)
 
       const plan = await guardarPlan(userId, 'dieta', nuevaSemana)
@@ -73,8 +149,8 @@ export default function Dieta() {
 
       setMensaje('Dieta generada y guardada correctamente ✅')
     } catch (e) {
-      console.error(e)
-      setError('No se pudo guardar la dieta.')
+      console.error('[Dieta] Error al generar/guardar la dieta:', e)
+      setError(e.message || 'No se pudo generar o guardar la dieta.')
     } finally {
       setCargando(false)
     }
@@ -113,7 +189,7 @@ export default function Dieta() {
           <div>
             <h1 className="section-title">Plan de dieta (semana)</h1>
             <p className="mt-2 text-text-muted dark:text-white/80">
-              Menús variados y balanceados. Ajusta raciones según hambre/actividad.
+              Menús variados y balanceados. Ajusta raciones según hambre y actividad.
             </p>
           </div>
           <div className="flex gap-3">
@@ -127,9 +203,15 @@ export default function Dieta() {
         {mensaje && <p className="text-green-500 mt-4">{mensaje}</p>}
         {error && <p className="text-red-500 mt-4">{error}</p>}
 
+        {!cargando && !error && (!planActual || !historial.length) && (
+          <p className="mt-4 text-sm text-text-muted dark:text-white/70">
+            Pulsa <strong>Regenerar</strong> para crear tu primer plan de dieta semanal.
+          </p>
+        )}
+
         {cargando && (
           <p className="mt-4 text-sm text-text-muted dark:text-white/70">
-            Cargando/guardando plan...
+            Cargando / guardando plan...
           </p>
         )}
 
@@ -138,10 +220,16 @@ export default function Dieta() {
             <article key={i} className="card card-pad">
               <header className="flex items-center justify-between">
                 <h2 className="font-semibold text-lg text-brand">{d.dia}</h2>
-                <span className="text-sm text-text-muted dark:text-white/70">{d.kcal} kcal</span>
+                <span className="text-sm text-text-muted dark:text-white/70">
+                  {d.kcal} kcal
+                </span>
               </header>
               <ul className="mt-4 space-y-2 text-sm">
-                {d.comidas.map((c, j) => <li key={j} className="list-disc ml-5">{c}</li>)}
+                {d.comidas?.map((c, j) => (
+                  <li key={j} className="list-disc ml-5">
+                    {c}
+                  </li>
+                ))}
               </ul>
             </article>
           ))}
@@ -149,7 +237,9 @@ export default function Dieta() {
 
         <div className="mt-8 card card-pad">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-text-muted dark:text-white/70">Calorías totales aprox.</p>
+            <p className="text-sm text-text-muted dark:text-white/70">
+              Calorías totales aprox.
+            </p>
             <p className="text-lg font-semibold">{kcalTot} kcal / semana</p>
           </div>
         </div>

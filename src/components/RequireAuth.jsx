@@ -9,11 +9,11 @@ export default function RequireAuth({ children }) {
 
   if (loading) {
     return (
-      <div className="section">
+      <section className="section">
         <div className="container">
           <p>Comprobando sesión…</p>
         </div>
-      </div>
+      </section>
     )
   }
 

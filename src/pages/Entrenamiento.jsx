@@ -1,75 +1,97 @@
 // src/pages/Entrenamiento.jsx
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
-import {
-  generarRutinaGemini
-} from '../lib/geminiClient'
+import { generarRutinaGemini } from '../lib/geminiClient'
 import {
   guardarPlan,
   obtenerUltimoPlan,
   obtenerPlanes,
   eliminarPlan,
-  actualizarPlan
+  actualizarPlan,
 } from '../lib/planesService'
 
 export default function Entrenamiento() {
-  const { perfil, session } = useAuth()
+  const { perfil, session, logout } = useAuth()  // 👈 ahora también tenemos logout
   const userId = session?.user?.id
 
-  const [rutina, setRutina] = useState([])       // array { dia, ejercicios[] }
-  const [planActual, setPlanActual] = useState(null) // fila de la tabla planes
+  const [rutina, setRutina] = useState([])            // array { dia, ejercicios[] }
+  const [planActual, setPlanActual] = useState(null)  // fila de la tabla planes
   const [historial, setHistorial] = useState([])
 
-  const [cargando, setCargando] = useState(false)
+  const [cargandoInicial, setCargandoInicial] = useState(true) // 👈 carga desde Supabase
+  const [generando, setGenerando] = useState(false)            // 👈 llamada a Gemini
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
 
-  // Cargar último plan + historial
+  // 🔹 Cargar último plan + historial al entrar
   useEffect(() => {
     const cargar = async () => {
-      if (!userId) return
-      setCargando(true)
+      if (!userId) {
+        setCargandoInicial(false)
+        return
+      }
+      setCargandoInicial(true)
       setError('')
       try {
         const ultimo = await obtenerUltimoPlan(userId, 'entrenamiento')
         if (ultimo) {
           setPlanActual(ultimo)
-          setRutina(ultimo.datos) // aquí asumo que datos es el array que pintas
+          setRutina(ultimo.datos || [])
+        } else {
+          setPlanActual(null)
+          setRutina([])
         }
+
         const lista = await obtenerPlanes(userId, 'entrenamiento')
-        setHistorial(lista)
+        setHistorial(lista || [])
       } catch (e) {
         console.error(e)
         setError('No se pudo cargar tu rutina.')
       } finally {
-        setCargando(false)
+        setCargandoInicial(false)
       }
     }
     cargar()
   }, [userId])
 
+  // 🔹 Generar / Regenerar rutina con Gemini
   const obtenerRutina = async () => {
-    if (!perfil || !userId) return
-    setCargando(true)
+    if (!perfil || !userId) {
+      setError('Completa tu perfil antes de generar la rutina.')
+      return
+    }
+
+    setGenerando(true)
     setError('')
     setMensaje('')
+
     try {
+      console.log('[Entrenamiento] Generando rutina para perfil:', perfil)
       const datos = await generarRutinaGemini(perfil)
+      console.log('[Entrenamiento] Rutina generada:', datos)
+
+      if (!Array.isArray(datos) || datos.length === 0) {
+        setError('La IA no ha devuelto una rutina válida.')
+        setRutina([])
+        return
+      }
+
       setRutina(datos)
 
       // Guardar rutina en Supabase como nuevo plan
       const plan = await guardarPlan(userId, 'entrenamiento', datos)
       setPlanActual(plan)
 
-      // Recargar historial (o añadir al principio)
+      // Recargar historial (añadiendo el plan nuevo al principio)
       setHistorial((prev) => [plan, ...prev])
 
       setMensaje('Rutina generada y guardada correctamente ✅')
     } catch (e) {
       console.error('Error en obtenerRutina:', e)
-      setError('No se pudo generar o guardar la rutina.')
+      setError(e.message || 'No se pudo generar o guardar la rutina.')
     } finally {
-      setCargando(false)
+      // ⭐ Pase lo que pase (error o éxito), dejamos de estar "Generando..."
+      setGenerando(false)
     }
   }
 
@@ -95,12 +117,10 @@ export default function Entrenamiento() {
     }
   }
 
-  // Si quisieras editar manualmente la rutina (por ejemplo nota/series),
-  // aquí llamarías a actualizarPlan(planActual.id, userId, rutinaModificada)
-
   return (
     <section className="section">
       <div className="container">
+        {/* Cabecera */}
         <div className="flex items-end justify-between gap-4">
           <div>
             <h1 className="section-title">Rutina semanal</h1>
@@ -108,16 +128,46 @@ export default function Entrenamiento() {
               Generada por IA según tu perfil.
             </p>
           </div>
+
           <div className="flex gap-3">
-            <button onClick={obtenerRutina} className="btn-ghost" disabled={cargando}>
-              {cargando ? 'Generando...' : 'Regenerar'}
+            <button
+              onClick={obtenerRutina}
+              className="btn-ghost"
+              disabled={generando || !perfil || !userId}
+            >
+              {generando
+                ? 'Generando...'
+                : rutina.length > 0
+                ? 'Regenerar'
+                : 'Generar rutina'}
             </button>
+
             <button className="btn-primary">Descargar PDF</button>
+
+            {/* Opcional: botón de cierre de sesión aquí */}
+            {/* <button onClick={logout} className="btn-ghost text-red-500">
+              Cerrar sesión
+            </button> */}
           </div>
         </div>
 
+        {/* Mensajes */}
         {mensaje && <p className="text-green-500 mt-4">{mensaje}</p>}
         {error && <p className="text-red-500 mt-4">{error}</p>}
+
+        {/* Info mientras se carga desde Supabase */}
+        {cargandoInicial && (
+          <p className="mt-6 text-sm text-text-muted dark:text-white/70">
+            Cargando tu última rutina guardada...
+          </p>
+        )}
+
+        {/* Texto inicial cuando NO hay rutina todavía */}
+        {!cargandoInicial && !generando && !error && rutina.length === 0 && (
+          <p className="mt-6 text-sm text-text-muted dark:text-white/70">
+            Pulsa <strong>Generar rutina</strong> para crear tu primera rutina semanal.
+          </p>
+        )}
 
         {/* Rutina actual */}
         <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -129,7 +179,9 @@ export default function Entrenamiento() {
                   <li key={j} className="flex items-start justify-between gap-4">
                     <div>
                       <p className="font-medium">{e.nombre}</p>
-                      <p className="text-sm text-text-muted dark:text-white/70">{e.nota}</p>
+                      <p className="text-sm text-text-muted dark:text-white/70">
+                        {e.nota}
+                      </p>
                     </div>
                     <span className="text-sm font-semibold">{e.series}</span>
                   </li>
@@ -139,7 +191,7 @@ export default function Entrenamiento() {
           ))}
         </div>
 
-        {/* Historial simple de planes */}
+        {/* Historial de planes */}
         <div className="mt-10 card card-pad">
           <h2 className="font-semibold text-lg">Historial de rutinas</h2>
           {historial.length === 0 ? (
