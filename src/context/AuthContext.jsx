@@ -109,6 +109,7 @@ export function AuthProvider({ children }) {
           nombre,
           avatar_url,
           es_admin,
+          activo,
           edad,
           sexo,
           altura_cm,
@@ -345,6 +346,23 @@ export function AuthProvider({ children }) {
     return publicUrl
   }
 
+  // 🧮 Propiedad derivada: ¿es admin?
+  const esAdmin =
+    !!session &&
+    (
+      session.user?.email === 'admin@plexus.es' || // admin por email
+      perfil?.es_admin === true                    // o por flag en BD
+    )
+
+  // 🚫 Si el perfil existe pero está bloqueado, cierro sesión
+  useEffect(() => {
+    if (!loading && perfil && perfil.activo === false) {
+      console.warn('[AuthContext] Usuario bloqueado por admin. Cerrando sesión.')
+      alert('Tu cuenta ha sido bloqueada por el administrador.')
+      logout()
+    }
+  }, [perfil, loading]) // logout se captura en el cierre
+
   const value = {
     session,
     perfil,
@@ -355,6 +373,7 @@ export function AuthProvider({ children }) {
     resendConfirmEmail,
     updatePerfil,
     uploadAvatar,
+    esAdmin,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

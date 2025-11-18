@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Layout({ children }) {
-  const { session, perfil, loading, logout } = useAuth()
+  const { session, perfil, loading, logout, esAdmin } = useAuth()
   const navigate = useNavigate()
 
   const isLogged = !!session?.user
@@ -16,7 +16,9 @@ export default function Layout({ children }) {
     <>
       <nav className="app-nav">
         <div className="nav-inner">
-          <Link to="/" className="nav-title">FitMind</Link>
+          <Link to="/" className="nav-title">
+            FitMind
+          </Link>
 
           <div className="nav-actions">
             {loading ? (
@@ -25,15 +27,28 @@ export default function Layout({ children }) {
               </span>
             ) : !isLogged ? (
               <>
-                <Link to="/login" className="btn-ghost">Iniciar sesión</Link>
-                {/* 👇 aquí el cambio importante */}
+                <Link to="/login" className="btn-ghost">
+                  Iniciar sesión
+                </Link>
                 <Link to="/login?mode=registro" className="btn-primary">
                   Registrarse
                 </Link>
               </>
             ) : (
               <>
-                <Link to="/control" className="btn-ghost">Dashboard</Link>
+                {/* 🔹 Enlace a Dashboard solo para usuarios normales */}
+                {!esAdmin && (
+                  <Link to="/control" className="btn-ghost">
+                    Dashboard
+                  </Link>
+                )}
+
+                {/* 🔹 Enlace a /admin solo para admins */}
+                {esAdmin && (
+                  <Link to="/admin" className="btn-ghost">
+                    Admin
+                  </Link>
+                )}
 
                 <button
                   type="button"
@@ -75,8 +90,12 @@ export default function Layout({ children }) {
         <div className="container py-8 text-center text-sm text-text-muted dark:text-white/60">
           <p>© {new Date().getFullYear()} FitMind</p>
           <nav className="mt-3 flex justify-center gap-6">
-            <Link className="hover:text-brand" to="/politica">Privacidad</Link>
-            <a className="hover:text-brand" href="mailto:hola@fitmind.local">Contacto</a>
+            <Link className="hover:text-brand" to="/politica">
+              Privacidad
+            </Link>
+            <a className="hover:text-brand" href="mailto:hola@fitmind.local">
+              Contacto
+            </a>
           </nav>
         </div>
       </footer>

@@ -11,6 +11,8 @@ import RequireAuth from './components/RequireAuth.jsx'
 import Perfil from './pages/Perfil.jsx'
 import NuevaClave from './pages/NuevaClave.jsx'
 import AuthCallback from './pages/AuthCallback.jsx'
+import RequireAdmin from './components/RequireAdmin.jsx'
+import AdminUsuarios from './pages/AdminUsuarios.jsx'
 
 export default function App() {
     return (
@@ -52,6 +54,14 @@ export default function App() {
                         <RequireAuth>
                             <Perfil />
                         </RequireAuth>
+                    }
+                />
+                <Route
+                    path="/admin"
+                    element={
+                         <RequireAdmin>
+                              <AdminUsuarios />
+                         </RequireAdmin>
                     }
                 />
                 <Route path="/nueva-clave" element={<NuevaClave />} />
