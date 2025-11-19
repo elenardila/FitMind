@@ -36,14 +36,14 @@ export default function Layout({ children }) {
               </>
             ) : (
               <>
-                {/* 🔹 Enlace a Dashboard solo para usuarios normales */}
+                {/* Usuario normal → ve Dashboard */}
                 {!esAdmin && (
                   <Link to="/control" className="btn-ghost">
                     Dashboard
                   </Link>
                 )}
 
-                {/* 🔹 Enlace a /admin solo para admins */}
+                {/* Admin → ve solo Admin */}
                 {esAdmin && (
                   <Link to="/admin" className="btn-ghost">
                     Admin
