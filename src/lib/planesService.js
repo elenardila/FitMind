@@ -11,24 +11,20 @@ function getSemanaInicioISO() {
   return lunes.toISOString().slice(0, 10)
 }
 
-// 🔹 Guarda o actualiza el plan de la semana actual (UPERT sobre usuario_id+tipo+semana_inicio)
+// 🔹 Guarda el plan SIEMPRE como registro nuevo (sin machacar otros)
 export async function guardarPlan(usuarioId, tipo, datos) {
   const semanaInicio = getSemanaInicioISO()
 
   const { data, error } = await supabase
     .from('planes')
-    .upsert(
+    .insert([
       {
         usuario_id: usuarioId,
         tipo,
         semana_inicio: semanaInicio,
         datos,
       },
-      {
-        onConflict: 'usuario_id,tipo,semana_inicio',
-        ignoreDuplicates: false, // si existe, lo actualiza
-      }
-    )
+    ])
     .select('*')
     .single()
 
@@ -47,7 +43,8 @@ export async function obtenerUltimoPlan(usuarioId, tipo) {
     .select('*')
     .eq('usuario_id', usuarioId)
     .eq('tipo', tipo)
-    .order('semana_inicio', { ascending: false })
+    // 👉 mejor por creado_en, que es un timestamp único por inserción
+    .order('creado_en', { ascending: false })
     .limit(1)
     .maybeSingle()
 
@@ -67,7 +64,8 @@ export async function obtenerPlanes(usuarioId, tipo) {
     .select('*')
     .eq('usuario_id', usuarioId)
     .eq('tipo', tipo)
-    .order('semana_inicio', { ascending: false })
+    // 👉 igual, ordenamos por fecha de creación más reciente primero
+    .order('creado_en', { ascending: false })
 
   if (error) {
     console.error('[planesService] Error en obtenerPlanes:', error)
