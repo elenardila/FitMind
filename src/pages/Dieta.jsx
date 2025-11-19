@@ -277,7 +277,7 @@ export default function Dieta() {
         {/* Cabecera */}
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h1 className="section-title">Plan de dieta (semana)</h1>
+            <h1 className="section-title">Plan de dieta</h1>
             <p className="mt-2 text-text-muted dark:text-white/80">
               Menús variados y balanceados. Ajusta raciones según hambre y actividad.
             </p>

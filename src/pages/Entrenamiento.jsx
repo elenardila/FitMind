@@ -246,7 +246,24 @@ export default function Entrenamiento() {
               key={`actual-${r.dia || 'dia'}-${i}`}
               className="card card-pad"
             >
-              <h2 className="font-semibold text-lg text-brand">{r.dia}</h2>
+              {/* Cabecera del día con mini imagen */}
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-semibold text-lg text-brand">
+                  {r.dia}
+                </h2>
+
+                {r.imagenUrl && (
+                  <div className="shrink-0">
+                    <img
+                      src={r.imagenUrl}
+                      alt={`Ilustración de entrenamiento para ${r.dia}`}
+                      className="w-24 h-24 rounded-lg object-cover border border-slate-700"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+              </div>
+
               <ul className="mt-4 space-y-3">
                 {r.ejercicios.map((e, j) => (
                   <li
@@ -412,7 +429,24 @@ export default function Entrenamiento() {
                   key={`modal-${r.dia}-${i}`}
                   className="card card-pad"
                 >
-                  <h3 className="font-semibold text-lg text-brand">{r.dia}</h3>
+                  {/* Cabecera del día con mini imagen */}
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-semibold text-lg text-brand">
+                      {r.dia}
+                    </h3>
+
+                    {r.imagenUrl && (
+                      <div className="shrink-0">
+                        <img
+                          src={r.imagenUrl}
+                          alt={`Ilustración de entrenamiento para ${r.dia}`}
+                          className="w-24 h-24 rounded-lg object-cover border border-slate-700"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <ul className="mt-4 space-y-3">
                     {r.ejercicios.map((e, j) => (
                       <li

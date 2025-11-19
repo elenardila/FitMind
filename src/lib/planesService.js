@@ -1,5 +1,6 @@
 // src/lib/planesService.js
 import { supabase } from './supabaseClient'
+import { asignarImagenesPorDia } from './imagenesDias'
 
 // 🔢 Calcula el lunes de la semana actual (inicio de semana)
 function getSemanaInicioISO() {
@@ -15,6 +16,11 @@ function getSemanaInicioISO() {
 export async function guardarPlan(usuarioId, tipo, datos) {
   const semanaInicio = getSemanaInicioISO()
 
+  // 💡 Añadimos imagenUrl a cada día del plan (según tipo)
+  // - Si tipo === 'entrenamiento' → usará las 12 imágenes de entrenamiento
+  // - Si tipo === 'dieta' (u otro) y no hay lista → devuelve datos tal cual
+  const datosConImagenes = asignarImagenesPorDia(datos, tipo)
+
   const { data, error } = await supabase
     .from('planes')
     .insert([
@@ -22,7 +28,7 @@ export async function guardarPlan(usuarioId, tipo, datos) {
         usuario_id: usuarioId,
         tipo,
         semana_inicio: semanaInicio,
-        datos,
+        datos: datosConImagenes,
       },
     ])
     .select('*')
@@ -76,11 +82,15 @@ export async function obtenerPlanes(usuarioId, tipo) {
 }
 
 // 🔹 Actualiza sólo los datos/json de un plan concreto
-export async function actualizarPlan(planId, usuarioId, datos) {
+export async function actualizarPlan(planId, usuarioId, datos, tipo) {
+  // 👀 IMPORTANTE: ahora también enriquecemos aquí por si regenera días
+  // y quieres que sigan teniendo imágenes.
+  const datosConImagenes = asignarImagenesPorDia(datos, tipo)
+
   const { data, error } = await supabase
     .from('planes')
     .update({
-      datos,
+      datos: datosConImagenes,
     })
     .eq('id', planId)
     .eq('usuario_id', usuarioId)
