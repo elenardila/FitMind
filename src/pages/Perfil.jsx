@@ -188,8 +188,7 @@ export default function Perfil() {
             console.error('[Perfil] Error al subir avatar:', err)
             setError(err.message || 'No se pudo subir el avatar.')
         } finally {
-            // 🧽 Muy importante: limpiar el input para que al elegir el MISMO archivo
-            // vuelva a disparar onChange (si no, después de borrar parece que "no hace nada")
+            // 🧽 limpiar el input para que al elegir el MISMO archivo vuelva a disparar onChange
             input.value = ''
             setAvatarSaving(false)
         }
@@ -224,13 +223,14 @@ export default function Perfil() {
                     Edita tus datos y preferencias. Al guardar, se regenerarán tu dieta y entrenamiento.
                 </p>
 
-                {/* Toast / notificaciones */}
+                {/* Toast / notificaciones flotantes */}
                 {(mensaje || error) && (
-                    <div className="mt-4 flex justify-end">
+                    <div className="fixed bottom-4 right-4 z-50 flex justify-end px-4 pointer-events-none">
                         <div
-                            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm shadow-lg border ${
+                            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm shadow-lg border pointer-events-auto
+                ${
                                 mensaje
-                                    ? 'bg-emerald-900/80 border-emerald-500 text-emerald-50'
+                                    ? 'bg-brand/90 border-brand text-white'
                                     : 'bg-red-900/80 border-red-500 text-red-50'
                             }`}
                         >

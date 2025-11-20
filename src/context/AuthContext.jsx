@@ -280,24 +280,55 @@ export function AuthProvider({ children }) {
     return data.session
   }
 
-  // 🔹 REGISTRO (el perfil detallado lo rellenas desde Login.jsx con draftPerfil)
-  const register = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-    if (error) throw error
+    // 🔹 REGISTRO robusto: detecta usuario existente sin depender del error de Supabase
+    const register = async (email, password) => {
+        console.log('[AuthContext] register ->', email)
 
-    const userId = data?.user?.id || data?.session?.user?.id
-    if (userId) {
-      await cargarPerfil(userId)
+        // 1️⃣ Comprobación previa en la tabla perfiles
+        try {
+            const { data: existing } = await supabase
+                .from('perfiles')
+                .select('id')
+                .eq('email', email)
+                .single()
+
+            if (existing) {
+                const err = new Error('user_already_exists')
+                err.code = 'user_already_exists'
+                throw err
+            }
+        } catch (e) {
+            // si single() falla por "Row not found", significa que NO existe, así que continuamos
+            if (!`${e.message}`.toLowerCase().includes('row')) {
+                if (e.code === 'user_already_exists') throw e
+            }
+        }
+
+        // 2️⃣ Intento real de registro
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: `${window.location.origin}/auth/callback`,
+            },
+        })
+
+        // 3️⃣ Si signUp devuelve error explícito → lo mostramos
+        if (error) {
+            console.error('[AuthContext] register error:', error)
+            throw error
+        }
+
+        // 4️⃣ Seguridad: nunca dejamos sesión activa tras registro
+        try {
+            await supabase.auth.signOut()
+        } catch {}
+
+        return data
     }
-  }
 
-  // 🔹 LOGOUT global + limpieza de tokens
+
+    // 🔹 LOGOUT global + limpieza de tokens
   const logout = async () => {
     console.log('[AuthContext] logout llamado')
 

@@ -1,12 +1,11 @@
 // src/pages/Dieta.jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import {
     guardarPlan,
     obtenerUltimoPlan,
     obtenerPlanes,
     eliminarPlan,
-    // actualizarPlan,
 } from '../lib/planesService'
 import { generarDietaGemini } from '../lib/geminiClient'
 import {
@@ -16,7 +15,16 @@ import {
     FiPlay,
     FiX,
     FiAlertTriangle,
+    FiDownload,
+    FiCalendar,
+    FiBookOpen,
+    FiHeart,
+    FiCheckCircle,
+    FiAlertCircle,
 } from 'react-icons/fi'
+
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 // Fallback SOLO si vienen datos rotos de la BD/IA
 const semanaMock = [
@@ -95,6 +103,8 @@ export default function Dieta() {
 
     const [cargandoInicial, setCargandoInicial] = useState(true)
     const [generando, setGenerando] = useState(false)
+
+    // Notificaciones tipo toast (como en Perfil)
     const [mensaje, setMensaje] = useState('')
     const [error, setError] = useState('')
 
@@ -107,6 +117,13 @@ export default function Dieta() {
 
     const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false)
     const [planAEliminar, setPlanAEliminar] = useState(null)
+
+    // Modal: confirmar descarga PDF
+    const [mostrarModalPdf, setMostrarModalPdf] = useState(false)
+    const [generandoPdf, setGenerandoPdf] = useState(false)
+
+    // Ref para la versión simplificada que exportaremos a PDF
+    const pdfRef = useRef(null)
 
     // Helpers: compatibilidad de formato de datos
     const extraerDiasDesdeDatos = (datos) => {
@@ -127,6 +144,16 @@ export default function Dieta() {
 
     const kcalTot = semana.reduce((acc, d) => acc + (d.kcal || 0), 0)
 
+    // Autocierre de notificaciones
+    useEffect(() => {
+        if (!mensaje && !error) return
+        const t = setTimeout(() => {
+            setMensaje('')
+            setError('')
+        }, 4000)
+        return () => clearTimeout(t)
+    }, [mensaje, error])
+
     // Cargar último plan + historial al entrar
     useEffect(() => {
         const cargar = async () => {
@@ -135,6 +162,7 @@ export default function Dieta() {
                 return
             }
             setCargandoInicial(true)
+            setMensaje('')
             setError('')
             try {
                 const ultimo = await obtenerUltimoPlan(userId, 'dieta')
@@ -165,6 +193,9 @@ export default function Dieta() {
     const manejarConfirmarNuevaDieta = async (e) => {
         e.preventDefault()
 
+        setMensaje('')
+        setError('')
+
         if (!userId) {
             setError('Debes iniciar sesión para generar tu plan de dieta.')
             return
@@ -181,8 +212,6 @@ export default function Dieta() {
         }
 
         setGenerando(true)
-        setError('')
-        setMensaje('')
 
         try {
             console.log('[Dieta] Generando plan de dieta para perfil:', perfil)
@@ -211,7 +240,7 @@ export default function Dieta() {
 
             setHistorial((prev) => [plan, ...prev])
 
-            setMensaje('Dieta generada y guardada correctamente ✅')
+            setMensaje('Dieta generada y guardada correctamente')
             setNombreNuevaDieta('')
             setMostrarModalNueva(false)
         } catch (e) {
@@ -226,8 +255,8 @@ export default function Dieta() {
     const manejarVerPlan = (plan) => {
         setPlanSeleccionado(plan)
         setMostrarModalVer(true)
-        setError('')
         setMensaje('')
+        setError('')
     }
 
     // Empezar dieta desde el modal
@@ -244,6 +273,8 @@ export default function Dieta() {
     const solicitarEliminarPlan = (plan) => {
         setPlanAEliminar(plan)
         setMostrarModalEliminar(true)
+        setMensaje('')
+        setError('')
     }
 
     // Confirmar eliminación
@@ -271,16 +302,99 @@ export default function Dieta() {
         setMostrarModalEliminar(false)
     }
 
+    // ------------------------------
+    // Generar PDF de la dieta actual (usa versión simplificada oculta)
+    // ------------------------------
+    const generarPdfDieta = async () => {
+        setMensaje('')
+        setError('')
+
+        if (!semana || semana.length === 0) {
+            setError('No hay ninguna dieta para descargar.')
+            setMostrarModalPdf(false)
+            return
+        }
+
+        const elemento = pdfRef.current
+        if (!elemento) {
+            setError('No se ha encontrado el contenido para generar el PDF.')
+            setMostrarModalPdf(false)
+            return
+        }
+
+        try {
+            setGenerandoPdf(true)
+
+            const canvas = await html2canvas(elemento, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+            })
+
+            const imgData = canvas.toDataURL('image/png')
+            const pdf = new jsPDF('p', 'mm', 'a4')
+
+            const pdfWidth = pdf.internal.pageSize.getWidth()
+            const pdfHeight = pdf.internal.pageSize.getHeight()
+
+            const imgWidth = pdfWidth
+            const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+            let heightLeft = imgHeight
+            let position = 0
+
+            // Primera página
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+            heightLeft -= pdfHeight
+
+            // Páginas adicionales si hace falta
+            while (heightLeft > 0) {
+                position -= pdfHeight
+                pdf.addPage()
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+                heightLeft -= pdfHeight
+            }
+
+            const fecha = new Date().toISOString().slice(0, 10)
+            const nombreBase = planActual ? extraerNombrePlan(planActual) : 'dieta'
+            const nombreLimpio = nombreBase.replace(/[\s"/\\:*?<>|]+/g, '-')
+
+            pdf.save(`${nombreLimpio}-${fecha}.pdf`)
+            setMensaje('PDF de la dieta generado correctamente ✅')
+        } catch (e) {
+            console.error('[Dieta] Error al generar PDF:', e)
+            setError('Ha habido un problema al generar el PDF de la dieta.')
+        } finally {
+            setGenerandoPdf(false)
+            setMostrarModalPdf(false)
+        }
+    }
+
     return (
         <section className="section">
             <div className="container">
                 {/* Cabecera */}
                 <div className="flex items-end justify-between gap-4">
                     <div>
-                        <h1 className="section-title">Plan de dieta</h1>
+                        <h1 className="section-title flex items-center gap-2">
+                            <FiHeart className="text-brand" />
+                            <span>Plan de dieta</span>
+                        </h1>
                         <p className="mt-2 text-text-muted dark:text-white/80">
                             Menús variados y balanceados. Ajusta raciones según hambre y actividad.
                         </p>
+
+                        {planActual && (
+                            <p className="mt-2 text-sm text-brand flex items-center gap-2">
+                                <FiBookOpen />
+                                <span>
+                  Dieta actual:{' '}
+                                    <span className="font-semibold">
+                    {extraerNombrePlan(planActual)}
+                  </span>
+                </span>
+                            </p>
+                        )}
                     </div>
                     <div className="flex gap-3">
                         <button
@@ -291,13 +405,37 @@ export default function Dieta() {
                             <FiPlus />
                             {generando ? 'Generando...' : 'Generar nueva dieta'}
                         </button>
-                        <button className="btn-primary">Descargar PDF</button>
+                        <button
+                            className="btn-primary flex items-center gap-2"
+                            onClick={() => setMostrarModalPdf(true)}
+                            disabled={semana.length === 0 || generandoPdf}
+                        >
+                            <FiDownload />
+                            {generandoPdf ? 'Generando PDF...' : 'Descargar PDF'}
+                        </button>
                     </div>
                 </div>
 
-                {/* Mensajes */}
-                {mensaje && <p className="text-green-500 mt-4">{mensaje}</p>}
-                {error && <p className="text-red-500 mt-4">{error}</p>}
+                {/* Toast / notificaciones flotantes */}
+                {(mensaje || error) && (
+                    <div className="fixed bottom-4 right-4 z-50 flex justify-end px-4 pointer-events-none">
+                        <div
+                            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm shadow-lg border pointer-events-auto
+        ${mensaje
+                                ? 'bg-emerald-900/80 border-emerald-500 text-emerald-50'
+                                : 'bg-red-900/80 border-red-500 text-red-50'
+                            }`}
+                        >
+                            {mensaje ? (
+                                <FiCheckCircle className="shrink-0" />
+                            ) : (
+                                <FiAlertCircle className="shrink-0" />
+                            )}
+                            <p>{mensaje || error}</p>
+                        </div>
+                    </div>
+                )}
+
 
                 {/* Cargando inicial */}
                 {cargandoInicial && (
@@ -324,7 +462,7 @@ export default function Dieta() {
                     </p>
                 )}
 
-                {/* Dieta actual */}
+                {/* Dieta actual (visible en pantalla) */}
                 {planActual && semana.length > 0 && (
                     <>
                         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -336,8 +474,9 @@ export default function Dieta() {
                                     <header className="flex items-center justify-between gap-3">
                                         <div>
                                             <h2 className="font-semibold text-lg text-brand">{d.dia}</h2>
-                                            <span className="text-sm text-text-muted dark:text-white/70">
-                        {d.kcal} kcal
+                                            <span className="inline-flex items-center gap-1 text-sm text-text-muted dark:text-white/70">
+                        <FiHeart className="text-brand" />
+                                                {d.kcal} kcal
                       </span>
                                         </div>
 
@@ -370,7 +509,8 @@ export default function Dieta() {
                         {/* Totales de kcal */}
                         <div className="mt-8 card card-pad">
                             <div className="flex items-center justify-between">
-                                <p className="text-sm text-text-muted dark:text-white/70">
+                                <p className="text-sm text-text-muted dark:text-white/70 flex items-center gap-2">
+                                    <FiHeart className="text-brand" />
                                     Calorías totales aprox.
                                 </p>
                                 <p className="text-lg font-semibold">{kcalTot} kcal / semana</p>
@@ -379,9 +519,48 @@ export default function Dieta() {
                     </>
                 )}
 
+                {/* Versión simplificada SOLO PARA PDF (oculta, fondo blanco, texto oscuro) */}
+                {semana.length > 0 && (
+                    <div
+                        ref={pdfRef}
+                        className="fixed -left-[9999px] top-0 bg-white text-slate-900 p-6 w-[800px]"
+                    >
+                        <h1 className="text-2xl font-bold mb-4">
+                            {planActual ? extraerNombrePlan(planActual) : 'Plan de dieta'}
+                        </h1>
+
+                        {semana.map((d, i) => (
+                            <div key={`pdf-dieta-dia-${d.dia || i}-${i}`} className="mb-4">
+                                <h2 className="text-lg font-semibold mb-1">
+                                    {d.dia} ({d.kcal} kcal)
+                                </h2>
+                                <ul className="text-sm list-disc pl-4 space-y-1">
+                                    {d.comidas?.map((c, j) => (
+                                        <li key={`pdf-dieta-${d.dia || i}-comida-${j}`}>
+                                            {c}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+
+                        <div className="mt-4 border-t pt-2">
+                            <p className="text-sm">
+                                Total semanal aproximado: <strong>{kcalTot} kcal</strong>
+                            </p>
+                            <p className="mt-2 text-xs text-slate-500">
+                                *Esta dieta es orientativa y no sustituye el consejo de un profesional sanitario.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Historial de dietas */}
                 <div className="mt-10 card card-pad">
-                    <h2 className="font-semibold text-lg">Historial de dietas</h2>
+                    <h2 className="font-semibold text-lg flex items-center gap-2">
+                        <FiCalendar />
+                        <span>Historial de dietas</span>
+                    </h2>
                     {historial.length === 0 ? (
                         <p className="mt-2 text-sm text-text-muted dark:text-white/70">
                             Aún no tienes dietas guardadas.
@@ -394,7 +573,10 @@ export default function Dieta() {
                                     className="flex items-center justify-between gap-4 border-b border-white/10 pb-2 last:border-none"
                                 >
                                     <div className="flex-1">
-                                        <p className="font-medium">{extraerNombrePlan(p)}</p>
+                                        <p className="font-medium flex items-center gap-2">
+                                            <FiBookOpen className="text-brand" />
+                                            <span>{extraerNombrePlan(p)}</span>
+                                        </p>
                                         <p className="text-xs text-text-muted dark:text-white/60">
                                             Semana inicio: {p.semana_inicio}
                                         </p>
@@ -624,6 +806,61 @@ export default function Dieta() {
                             >
                                 <FiTrash2 />
                                 Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Confirmar descarga PDF */}
+            {mostrarModalPdf && (
+                <div
+                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4"
+                    onClick={() => !generandoPdf && setMostrarModalPdf(false)}
+                >
+                    <div
+                        className="w-full max-w-md rounded-xl bg-slate-900 p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <FiDownload className="text-emerald-400 text-xl" />
+                                <h2 className="text-lg font-semibold text-white">
+                                    Descargar dieta en PDF
+                                </h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => !generandoPdf && setMostrarModalPdf(false)}
+                                className="text-slate-400 hover:text-slate-100"
+                                disabled={generandoPdf}
+                            >
+                                <FiX className="text-lg" />
+                            </button>
+                        </div>
+
+                        <p className="text-sm text-slate-200">
+                            Se generará un archivo PDF con tu dieta actual en formato texto legible.
+                            ¿Quieres continuar con la descarga?
+                        </p>
+
+                        <div className="flex justify-end gap-2 mt-6">
+                            <button
+                                type="button"
+                                className="btn-ghost text-sm"
+                                onClick={() => !generandoPdf && setMostrarModalPdf(false)}
+                                disabled={generandoPdf}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-primary flex items-center gap-2 text-sm"
+                                onClick={generarPdfDieta}
+                                disabled={generandoPdf}
+                            >
+                                <FiDownload />
+                                {generandoPdf ? 'Generando PDF...' : 'Descargar PDF'}
                             </button>
                         </div>
                     </div>
