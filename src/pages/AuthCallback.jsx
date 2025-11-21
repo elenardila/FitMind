@@ -4,28 +4,32 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 
 export default function AuthCallback() {
-  const navigate = useNavigate()
+    const navigate = useNavigate()
 
-  useEffect(() => {
-    const comprobar = async () => {
-      // Supabase ya habrá leído el token de la URL gracias a detectSessionInUrl: true
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        // ya estás logueada -> al panel
-        navigate('/control', { replace: true })
-      } else {
-        // algo ha fallado -> al login
-        navigate('/login', { replace: true })
-      }
-    }
-    comprobar()
-  }, [navigate])
+    useEffect(() => {
+        const procesar = async () => {
+            try {
+                // Supabase ya ha procesado el token de la URL.
+                // Por coherencia con tu flujo, cerramos sesión igualmente.
+                await supabase.auth.signOut()
+            } catch (e) {
+                console.error('[AuthCallback] Error en signOut:', e)
+            } finally {
+                // En cualquier caso, mandamos al login.
+                navigate('/login', { replace: true })
+            }
+        }
 
-  return (
-    <section className="section">
-      <div className="container">
-        <p>Confirmando tu cuenta…</p>
-      </div>
-    </section>
-  )
+        procesar()
+    }, [navigate])
+
+    return (
+        <section className="section">
+            <div className="container max-w-md">
+                <p className="text-sm text-text-muted dark:text-white/80">
+                    Confirmando tu cuenta…
+                </p>
+            </div>
+        </section>
+    )
 }

@@ -50,7 +50,7 @@ export default function Login() {
     // Para resaltar campos obligatorios tras intento de envío
     const [intentoEnvio, setIntentoEnvio] = useState(false)
 
-    // Toast global (abajo centrado)
+    // Toast global
     const [toast, setToast] = useState({ type: null, message: '' }) // type: 'success' | 'error' | null
 
     const redirectTo = location.state?.from?.pathname || '/control'
@@ -141,7 +141,7 @@ export default function Login() {
             const correo = emailLimpio
 
             if (modo === 'login') {
-                // ⬇️ ÚNICO CAMBIO IMPORTANTE: decidir destino según admin o no
+                // ⬇️ Destino según admin o usuario normal
                 const session = await login(correo, password)
                 const userEmail = session?.user?.email || correo
 
@@ -211,7 +211,9 @@ export default function Login() {
 
             if (
                 modo === 'login' &&
-                (msg.includes('email not confirmed') || msg.includes('email_not_confirmed'))
+                (msg.includes('email not confirmed') ||
+                    msg.includes('email_not_confirmed') ||
+                    code === 'email_not_confirmed')
             ) {
                 pushError('Tu correo no está verificado. Reenvía el email de verificación para poder acceder.')
                 setModalVerificacionOpen(true)
@@ -240,9 +242,9 @@ export default function Login() {
 
     return (
         <section className="section">
-            {/* ampliamos ancho para permitir dos columnas en registro */}
+            {/* Login estrecho / registro ancho */}
             <div className={`container ${modo === 'login' ? 'max-w-md' : 'max-w-4xl'}`}>
-            <h1 className="section-title text-brand mb-2">
+                <h1 className="section-title text-brand mb-2">
                     {modo === 'login' ? 'Acceder' : 'Crear cuenta'}
                 </h1>
                 <p className="text-sm text-text-muted dark:text-white/80 mb-6">
