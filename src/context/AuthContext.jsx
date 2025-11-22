@@ -144,6 +144,7 @@ export function AuthProvider({ children }) {
 
         const init = async () => {
             console.log('[AuthContext] init() -> comprobando sesión inicial')
+            setLoading(true)
             try {
                 const { data } = await supabase.auth.getSession()
                 const sess = data?.session ?? null
@@ -153,7 +154,7 @@ export function AuthProvider({ children }) {
                 setSession(sess)
 
                 if (sess?.user?.id) {
-                    // ❗ NO hacemos await aquí para no bloquear loading
+                    // no hacemos await para no bloquear loading
                     cargarPerfil(sess.user.id)
                 } else {
                     setPerfil(null)
@@ -288,29 +289,36 @@ export function AuthProvider({ children }) {
     // 🔹 LOGOUT
     const logout = async () => {
         console.log('[AuthContext] logout llamado')
+        setLoading(true)
 
         try {
-            const { error } = await supabase.auth.signOut()
+            // 🔧 Limpieza inmediata del estado del contexto
+            setSession(null)
+            setPerfil(null)
+            localStorage.removeItem('perfilDraft')
+
+            // 🔧 Limpiar claves de Supabase en localStorage
+            try {
+                if (typeof window !== 'undefined') {
+                    Object.keys(localStorage)
+                        .filter((k) => k.startsWith('sb-'))
+                        .forEach((k) => localStorage.removeItem(k))
+                }
+            } catch (e) {
+                console.error('[AuthContext] Error limpiando localStorage:', e)
+            }
+
+            // 🔧 Cerrar sesión en Supabase (global por si acaso)
+            const { error } = await supabase.auth.signOut({ scope: 'global' })
             if (error) {
                 console.error('[AuthContext] Error en supabase.auth.signOut():', error)
             }
         } catch (e) {
-            console.error('[AuthContext] Error inesperado en signOut():', e)
+            console.error('[AuthContext] Error inesperado en logout():', e)
+        } finally {
+            console.log('[AuthContext] logout -> loading = false')
+            setLoading(false)
         }
-
-        try {
-            if (typeof window !== 'undefined') {
-                Object.keys(localStorage)
-                    .filter((k) => k.startsWith('sb-'))
-                    .forEach((k) => localStorage.removeItem(k))
-            }
-        } catch (e) {
-            console.error('[AuthContext] Error limpiando localStorage:', e)
-        }
-
-        setPerfil(null)
-        setSession(null)
-        localStorage.removeItem('perfilDraft')
     }
 
     const resendConfirmEmail = async (email) => {
@@ -350,7 +358,7 @@ export function AuthProvider({ children }) {
             alert('Tu cuenta ha sido bloqueada por el administrador.')
             logout()
         }
-    }, [perfil, loading])
+    }, [perfil, loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const value = {
         session,
