@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { generarRutinaGemini, generarDietaGemini } from '../lib/geminiClient'
-import { guardarPlan } from '../lib/planesService'
+import Modal from '../components/Modal'
 import {
     FiSave,
     FiUpload,
@@ -22,7 +21,14 @@ function formatearMarcaTiempo() {
 }
 
 export default function Perfil() {
-    const { perfil, updatePerfil, uploadAvatar, session } = useAuth()
+    const {
+        perfil,
+        updatePerfil,
+        uploadAvatar,
+        session,
+        loading,
+        desactivarCuenta,
+    } = useAuth()
     const userId = session?.user?.id
 
     const [form, setForm] = useState({
@@ -41,6 +47,10 @@ export default function Perfil() {
     const [error, setError] = useState('')
     const [saving, setSaving] = useState(false)
     const [avatarSaving, setAvatarSaving] = useState(false)
+
+    // Zona peligrosa
+    const [modalEliminarOpen, setModalEliminarOpen] = useState(false)
+    const [eliminando, setEliminando] = useState(false)
 
     // 🔄 cuando cambie "perfil" desde el contexto, rehidratamos el formulario
     useEffect(() => {
@@ -64,7 +74,7 @@ export default function Perfil() {
         const t = setTimeout(() => {
             setMensaje('')
             setError('')
-        }, 4000) // 4 segundos
+        }, 4000)
         return () => clearTimeout(t)
     }, [mensaje, error])
 
@@ -85,47 +95,6 @@ export default function Perfil() {
                 .filter(Boolean)
         )
 
-    // 💡 Regenerar entrenamiento + dieta tras actualizar perfil
-    const regenerarPlanesDesdePerfil = async (perfilParaIA) => {
-        const marcaTiempo = formatearMarcaTiempo()
-
-        // 🏋️ Entrenamiento
-        try {
-            const rutina = await generarRutinaGemini(perfilParaIA)
-            if (Array.isArray(rutina) && rutina.length > 0 && userId) {
-                const datosPlanEntrenamiento = {
-                    nombre: `Entrenamiento ${marcaTiempo}`,
-                    dias: rutina,
-                }
-                await guardarPlan(userId, 'entrenamiento', datosPlanEntrenamiento)
-            } else {
-                console.warn('[Perfil] Rutina generada no válida, se omite guardar entrenamiento.')
-            }
-        } catch (err) {
-            console.error('[Perfil] Error al regenerar entrenamiento desde perfil:', err)
-            throw new Error(
-                'Perfil actualizado, pero hubo un problema al regenerar el entrenamiento.'
-            )
-        }
-
-        // 🍽️ Dieta
-        try {
-            const dieta = await generarDietaGemini(perfilParaIA)
-            if (Array.isArray(dieta) && dieta.length > 0 && userId) {
-                const datosPlanDieta = {
-                    nombre: `Dieta ${marcaTiempo}`,
-                    dias: dieta,
-                }
-                await guardarPlan(userId, 'dieta', datosPlanDieta)
-            } else {
-                console.warn('[Perfil] Dieta generada no válida, se omite guardar dieta.')
-            }
-        } catch (err) {
-            console.error('[Perfil] Error al regenerar dieta desde perfil:', err)
-            throw new Error('Perfil actualizado, pero hubo un problema al regenerar la dieta.')
-        }
-    }
-
     const handleGuardar = async (e) => {
         e.preventDefault()
         setMensaje('')
@@ -138,7 +107,6 @@ export default function Perfil() {
 
         setSaving(true)
         try {
-            // Normalizamos los datos que vamos a guardar
             const payload = {
                 nombre: form.nombre || null,
                 edad: form.edad ? Number(form.edad) : null,
@@ -151,22 +119,14 @@ export default function Perfil() {
                 alergias: form.alergias?.length ? form.alergias : null,
             }
 
-            // 1️⃣ Actualizamos perfil en Supabase
+            // 👇 AuthContext.updatePerfil ya se encarga de regenerar dieta + entrenamiento
             await updatePerfil(payload)
 
-            // Construimos un objeto perfil coherente para la IA
-            const perfilParaIA = {
-                ...(perfil || {}),
-                ...payload,
-            }
-
-            // 2️⃣ Regeneramos entrenamiento + dieta con el nuevo perfil
-            await regenerarPlanesDesdePerfil(perfilParaIA)
-
-            setMensaje('Perfil actualizado y planes regenerados correctamente ✅')
+            const marca = formatearMarcaTiempo()
+            setMensaje(`Perfil actualizado correctamente (${marca}) ✅`)
         } catch (err) {
-            console.error('[Perfil] Error en guardar perfil/regenerar planes:', err)
-            setError(err.message || 'No se pudo guardar el perfil o regenerar los planes.')
+            console.error('[Perfil] Error en guardar perfil:', err)
+            setError(err.message || 'No se pudo guardar el perfil.')
         } finally {
             setSaving(false)
         }
@@ -188,7 +148,6 @@ export default function Perfil() {
             console.error('[Perfil] Error al subir avatar:', err)
             setError(err.message || 'No se pudo subir el avatar.')
         } finally {
-            // 🧽 limpiar el input para que al elegir el MISMO archivo vuelva a disparar onChange
             input.value = ''
             setAvatarSaving(false)
         }
@@ -215,12 +174,32 @@ export default function Perfil() {
         encodeURIComponent(perfil?.nombre || 'Usuario') +
         '&background=8c52ff&color=fff'
 
+    if (loading) {
+        return (
+            <section className="section">
+                <div className="container max-w-3xl">
+                    <p>Cargando perfil…</p>
+                </div>
+            </section>
+        )
+    }
+
+    if (!perfil) {
+        return (
+            <section className="section">
+                <div className="container max-w-3xl">
+                    <p>No se ha encontrado tu perfil.</p>
+                </div>
+            </section>
+        )
+    }
+
     return (
         <section className="section">
             <div className="container max-w-3xl">
                 <h1 className="section-title">Tu perfil</h1>
                 <p className="mt-2 text-text-muted dark:text-white/80">
-                    Edita tus datos y preferencias. Al guardar, se regenerarán tu dieta y entrenamiento.
+                    Edita tus datos y preferencias. Al guardar, se regenerarán tu dieta y tu entrenamiento.
                 </p>
 
                 {/* Toast / notificaciones flotantes */}
@@ -397,6 +376,81 @@ export default function Perfil() {
                         </button>
                     </form>
                 </div>
+
+                {/* ================================
+            ZONA PELIGROSA: ELIMINAR CUENTA
+           ================================ */}
+                <div className="mt-10 card card-pad border border-red-500/40 bg-red-500/5">
+                    <h2 className="text-lg font-semibold text-red-600 dark:text-red-400">
+                        Eliminar mi cuenta
+                    </h2>
+                    <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+                        En FitMind nos tomamos muy en serio tu privacidad. Al eliminar tu cuenta,
+                        todos tus datos personales, preferencias, historial y cualquier otra
+                        información asociada serán eliminados de forma permanente e irreversible.
+                        Esta acción no se puede deshacer.
+                    </p>
+
+                    <button
+                        type="button"
+                        onClick={() => setModalEliminarOpen(true)}
+                        className="mt-4 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium
+                       bg-red-600 hover:bg-red-700 text-white shadow-sm
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                        Eliminar mi cuenta
+                    </button>
+                </div>
+
+                {/* MODAL confirmación eliminación */}
+                <Modal
+                    open={modalEliminarOpen}
+                    onClose={() => (eliminando ? null : setModalEliminarOpen(false))}
+                    title="¿Eliminar tu cuenta?"
+                    actions={
+                        <>
+                            <button
+                                type="button"
+                                className="btn-ghost"
+                                disabled={eliminando}
+                                onClick={() => setModalEliminarOpen(false)}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-primary bg-red-600 hover:bg-red-700 border-red-700"
+                                disabled={eliminando}
+                                onClick={async () => {
+                                    setMensaje('')
+                                    setError('')
+                                    try {
+                                        setEliminando(true)
+                                        await desactivarCuenta()
+                                        // 👉 El AuthContext hará logout al ver activo = false.
+                                        // No usamos alert, mantenemos el mismo estilo visual.
+                                    } catch (e) {
+                                        console.error('[Perfil] Error al desactivar cuenta:', e)
+                                        setError(
+                                            e?.message || 'No se pudo eliminar la cuenta. Inténtalo más tarde.'
+                                        )
+                                        setEliminando(false)
+                                    }
+                                }}
+                            >
+                                {eliminando ? 'Eliminando…' : 'Sí, eliminar mi cuenta'}
+                            </button>
+                        </>
+                    }
+                >
+                    <p className="text-sm">
+                        Tras realizar esta acción se cerrará tu sesión automáticamente y no podrás
+                        volver a acceder con este usuario.
+                    </p>
+                    <p className="mt-2 text-sm">
+                        ¿Seguro que quieres continuar?
+                    </p>
+                </Modal>
             </div>
         </section>
     )

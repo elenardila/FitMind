@@ -39,6 +39,7 @@ export default function Login() {
 
     const [modalResetOpen, setModalResetOpen] = useState(false)
     const [resetEmail, setResetEmail] = useState('')
+    const [resetError, setResetError] = useState('') // error visible dentro del modal de reset
 
     // Estado UI
     const [error, setError] = useState('')
@@ -118,7 +119,8 @@ export default function Login() {
     }
 
     // 🌈 Clase común para inputs en modo claro/oscuro + borde dinámico
-    const baseInputClasses = 'w-full rounded-md bg-white dark:bg-white/10 text-slate-900 dark:text-white border'
+    const baseInputClasses =
+        'w-full rounded-md bg-white dark:bg-white/10 text-slate-900 dark:text-white border'
     const defaultBorderClasses = 'border-slate-300 dark:border-white/20'
     const inputClass = (invalid = false) =>
         `${baseInputClasses} ${invalid ? 'border-brand' : defaultBorderClasses}`
@@ -144,6 +146,19 @@ export default function Login() {
                 // ⬇️ Destino según admin o usuario normal
                 const session = await login(correo, password)
                 const userEmail = session?.user?.email || correo
+
+                // 🔄 Aplicar perfilDraft si existe (nombre, edad, etc)
+                try {
+                    const draftStr = localStorage.getItem('perfilDraft')
+                    if (draftStr) {
+                        const draftPerfil = JSON.parse(draftStr)
+                        await updatePerfil(draftPerfil)
+                        localStorage.removeItem('perfilDraft')
+                    }
+                } catch (e) {
+                    console.error('[Login] Error aplicando perfilDraft tras login:', e)
+                    // no rompemos el login por esto
+                }
 
                 if (userEmail === 'admin@plexus.es') {
                     navigate('/admin', { replace: true })
@@ -215,7 +230,9 @@ export default function Login() {
                     msg.includes('email_not_confirmed') ||
                     code === 'email_not_confirmed')
             ) {
-                pushError('Tu correo no está verificado. Reenvía el email de verificación para poder acceder.')
+                pushError(
+                    'Tu correo no está verificado. Reenvía el email de verificación para poder acceder.'
+                )
                 setModalVerificacionOpen(true)
             } else if (
                 modo === 'registro' &&
@@ -292,7 +309,11 @@ export default function Login() {
                             <div className="text-right text-sm">
                                 <button
                                     type="button"
-                                    onClick={() => setModalResetOpen(true)}
+                                    onClick={() => {
+                                        setResetEmail(emailLimpio || '')
+                                        setResetError('')
+                                        setModalResetOpen(true)
+                                    }}
                                     className="text-brand hover:underline"
                                 >
                                     ¿Has olvidado tu contraseña?
@@ -507,7 +528,9 @@ export default function Login() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm mb-1">Alergias (separadas por comas)</label>
+                                    <label className="block text-sm mb-1">
+                                        Alergias (separadas por comas)
+                                    </label>
                                     <input
                                         value={alergiasTxt}
                                         onChange={(e) => setAlergiasTxt(e.target.value)}
@@ -522,7 +545,9 @@ export default function Login() {
                     <button
                         type="submit"
                         disabled={!puedeEnviar}
-                        className={`btn-primary w-full ${!puedeEnviar ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        className={`btn-primary w-full ${
+                            !puedeEnviar ? 'opacity-60 cursor-not-allowed' : ''
+                        }`}
                     >
                         {loading ? 'Cargando…' : modo === 'login' ? 'Entrar' : 'Registrarme'}
                     </button>
@@ -539,7 +564,7 @@ export default function Login() {
 
             {/* TOAST global abajo centrado */}
             {toast.type && (
-                <div className="fixed bottom-4 inset-x-0 flex justify-center z-50 px-4">
+                <div className="fixed bottom-4 inset-x-0 flex justify-center z-[60] px-4">
                     <div
                         className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm shadow-lg border ${
                             toast.type === 'success'
@@ -583,8 +608,8 @@ export default function Login() {
                 }
             >
                 <p>
-                    Parece que <strong>{emailLimpio}</strong> ya está registrado en FitMind. Si es tuyo, entra
-                    con tu contraseña o usa la opción de recuperación.
+                    Parece que <strong>{emailLimpio}</strong> ya está registrado en FitMind. Si es tuyo,
+                    entra con tu contraseña o usa la opción de recuperación.
                 </p>
             </Modal>
 
@@ -607,9 +632,13 @@ export default function Login() {
                                 try {
                                     await resendConfirmEmail(emailLimpio)
                                     setModalVerificacionOpen(false)
-                                    pushOk('Te hemos enviado un nuevo correo de verificación. Revisa tu bandeja.')
+                                    pushOk(
+                                        'Te hemos enviado un nuevo correo de verificación. Revisa tu bandeja.'
+                                    )
                                 } catch (e) {
-                                    pushError(e?.message || 'No se pudo reenviar el correo. Inténtalo más tarde.')
+                                    pushError(
+                                        e?.message || 'No se pudo reenviar el correo. Inténtalo más tarde.'
+                                    )
                                 }
                             }}
                         >
@@ -619,19 +648,30 @@ export default function Login() {
                 }
             >
                 <p>
-                    Tu cuenta existe pero <strong>{emailLimpio}</strong> aún no ha sido verificada. Abre el
-                    correo de confirmación o reenvíalo ahora.
+                    Tu cuenta existe pero <strong>{emailLimpio}</strong> aún no ha sido verificada.
+                    Abre el correo de confirmación o reenvíalo ahora.
                 </p>
             </Modal>
 
             {/* MODAL: recuperación de contraseña */}
             <Modal
                 open={modalResetOpen}
-                onClose={() => setModalResetOpen(false)}
+                onClose={() => {
+                    setModalResetOpen(false)
+                    setResetEmail('')
+                    setResetError('')
+                }}
                 title="Recuperar contraseña"
                 actions={
                     <>
-                        <button className="btn-ghost" onClick={() => setModalResetOpen(false)}>
+                        <button
+                            className="btn-ghost"
+                            onClick={() => {
+                                setModalResetOpen(false)
+                                setResetEmail('')
+                                setResetError('')
+                            }}
+                        >
                             Cancelar
                         </button>
                         <button
@@ -639,18 +679,60 @@ export default function Login() {
                             onClick={async () => {
                                 setError('')
                                 setOk('')
+                                setResetError('')
+
                                 try {
-                                    if (!resetEmail) {
-                                        pushError('Introduce un correo válido.')
+                                    const correo = resetEmail.trim()
+
+                                    if (!correo) {
+                                        const msg = 'Introduce un correo válido.'
+                                        setResetError(msg)
                                         return
                                     }
-                                    await supabase.auth.resetPasswordForEmail(resetEmail, {
+
+                                    // 1️⃣ Comprobar si la cuenta está desactivada
+                                    const { data: perfilRow, error: perfilError } = await supabase
+                                        .from('perfiles')
+                                        .select('activo')
+                                        .eq('email', correo)
+                                        .maybeSingle()
+
+                                    if (perfilError && perfilError.code !== 'PGRST116') {
+                                        console.error(
+                                            '[Login] Error comprobando perfil en reset:',
+                                            perfilError
+                                        )
+                                        const msg =
+                                            'No se ha podido verificar el estado de tu cuenta.'
+                                        setResetError(msg)
+                                        pushError(msg)
+                                        return
+                                    }
+
+                                    if (perfilRow && perfilRow.activo === false) {
+                                        // Cuenta desactivada → NO permitimos resetear contraseña
+                                        const msg =
+                                            'Tu cuenta está desactivada. No es posible recuperar la contraseña con este correo.'
+                                        setResetError(msg) // se ve dentro del modal
+                                        return
+                                    }
+
+                                    // 2️⃣ Si no hay perfil o está activo → permitimos el reset
+                                    await supabase.auth.resetPasswordForEmail(correo, {
                                         redirectTo: 'http://localhost:5173/nueva-clave',
                                     })
+
                                     pushOk('Hemos enviado un correo para restablecer tu contraseña.')
                                     setModalResetOpen(false)
+                                    setResetEmail('')
+                                    setResetError('')
                                 } catch (err) {
-                                    pushError(err.message || 'No se pudo enviar el correo. Inténtalo más tarde.')
+                                    console.error('[Login] Error en reset password:', err)
+                                    const msg =
+                                        err?.message ||
+                                        'No se pudo enviar el correo. Inténtalo más tarde.'
+                                    setResetError(msg)
+                                    pushError(msg)
                                 }
                             }}
                         >
@@ -660,8 +742,17 @@ export default function Login() {
                 }
             >
                 <p className="text-sm mb-3">
-                    Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
+                    Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu
+                    contraseña.
                 </p>
+
+                {resetError && (
+                    <div className="mb-3 flex items-center gap-2 rounded-md border border-red-500 bg-red-900/70 text-red-50 px-3 py-2 text-xs">
+                        <FiAlertCircle className="shrink-0" />
+                        <span>{resetError}</span>
+                    </div>
+                )}
+
                 <input
                     type="email"
                     value={resetEmail}

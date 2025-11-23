@@ -437,35 +437,79 @@ export default function Entrenamiento() {
                 )}
 
                 {/* =====================================================
-             VERSIÓN SIMPLIFICADA SOLO PARA PDF
-             (fuera de pantalla, fondo blanco y texto oscuro)
-        ===================================================== */}
+   VERSIÓN SIMPLIFICADA SOLO PARA PDF
+   (tipo cards, con fotos, fondo blanco y texto oscuro)
+===================================================== */}
                 <div
                     ref={pdfRef}
-                    className="fixed -left-[9999px] top-0 bg-white text-slate-900 p-6 w-[800px]"
+                    className="fixed -left-[9999px] top-0 w-[780px] bg-white text-slate-900 p-6"
                 >
-                    <h1 className="text-2xl font-bold mb-4">
+                    {/* Cabecera */}
+                    <h1 className="text-xl font-bold mb-2">
                         {planActual ? extraerNombrePlan(planActual) : 'Rutina semanal'}
                     </h1>
+                    <p className="text-xs text-slate-600 mb-4">
+                        Generada con FitMind · {new Date().toLocaleDateString()}
+                    </p>
 
-                    {rutina.map((r, i) => (
-                        <div key={`pdf-${r.dia || 'dia'}-${i}`} className="mb-4">
-                            <h2 className="text-lg font-semibold mb-2">
-                                {r.dia}
-                            </h2>
+                    {/* Grid de cards (2 columnas) */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {rutina.map((r, i) => (
+                            <article
+                                key={`pdf-${r.dia || 'dia'}-${i}`}
+                                className="border border-slate-300 rounded-lg p-3 flex flex-col gap-2"
+                            >
+                                {/* Cabecera día + mini imagen */}
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                    <div>
+                                        <h2 className="text-sm font-semibold text-slate-900">
+                                            {r.dia}
+                                        </h2>
+                                    </div>
 
-                            <ul className="text-sm list-disc pl-4 space-y-1">
-                                {r.ejercicios.map((e, j) => (
-                                    <li key={`pdf-${r.dia}-${e.nombre}-${j}`}>
-                                        <span className="font-medium">{e.nombre}</span>{' — '}
-                                        <span>{e.series}</span>{' — '}
-                                        <span className="italic">{e.nota}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+                                    {r.imagenUrl && (
+                                        <div className="shrink-0">
+                                            <img
+                                                src={r.imagenUrl}
+                                                alt={`Entrenamiento para ${r.dia}`}
+                                                className="w-16 h-16 rounded-md object-cover border border-slate-300"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Lista de ejercicios */}
+                                <ul className="space-y-1 text-xs">
+                                    {r.ejercicios.map((e, j) => (
+                                        <li
+                                            key={`pdf-${r.dia}-${e.nombre}-${j}`}
+                                            className="flex justify-between gap-2"
+                                        >
+                                            <div className="flex-1">
+                                                <p className="font-medium text-slate-900">{e.nombre}</p>
+                                                {e.nota && (
+                                                    <p className="text-[11px] text-slate-600">
+                                                        {e.nota}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <span className="text-[11px] font-semibold text-slate-800">
+                {e.series}
+              </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </article>
+                        ))}
+                    </div>
+
+                    {/* Pie */}
+                    <p className="mt-4 text-[10px] text-slate-500 border-t border-slate-200 pt-2">
+                        Esta rutina es orientativa y no sustituye el consejo de un profesional
+                        cualificado. Ajusta pesos y volumen a tu nivel.
+                    </p>
                 </div>
+
 
                 {/* =====================================================
              HISTORIAL

@@ -35,7 +35,19 @@ async function actualizarRutinaPorCambioPerfil(perfilAntes, perfilDespues, userI
 
     console.log('[AuthContext] Campos clave cambiados. Regenerando RUTINA…')
     const nuevaRutina = await generarRutinaGemini(perfilDespues)
-    const plan = await guardarPlan(userId, 'entrenamiento', nuevaRutina)
+
+    if (!Array.isArray(nuevaRutina) || nuevaRutina.length === 0) {
+        console.warn('[AuthContext] generarRutinaGemini no devolvió una rutina válida')
+        return null
+    }
+
+    // 👇 mismo formato que Entrenamiento.jsx
+    const datosPlan = {
+        nombre: 'Rutina autogenerada',
+        dias: nuevaRutina,
+    }
+
+    const plan = await guardarPlan(userId, 'entrenamiento', datosPlan)
     console.log('[AuthContext] Rutina actualizada. Plan id:', plan?.id)
     return plan
 }
@@ -47,7 +59,18 @@ async function actualizarDietaPorCambioPerfil(perfilAntes, perfilDespues, userId
 
     console.log('[AuthContext] Campos clave cambiados. Regenerando DIETA…')
     const nuevaDieta = await generarDietaGemini(perfilDespues)
-    const plan = await guardarPlan(userId, 'dieta', nuevaDieta)
+
+    if (!Array.isArray(nuevaDieta) || nuevaDieta.length === 0) {
+        console.warn('[AuthContext] generarDietaGemini no devolvió una dieta válida')
+        return null
+    }
+
+    const datosPlan = {
+        nombre: 'Dieta autogenerada',
+        dias: nuevaDieta,
+    }
+
+    const plan = await guardarPlan(userId, 'dieta', datosPlan)
     console.log('[AuthContext] Dieta actualizada. Plan id:', plan?.id)
     return plan
 }
@@ -101,32 +124,60 @@ export function AuthProvider({ children }) {
 
     // 🔹 Crear / actualizar perfil del usuario logueado
     const updatePerfil = async (partial) => {
-        if (!session?.user?.id) throw new Error('No hay usuario')
+        // 1️⃣ Intentar usar el usuario del estado
+        let user = session?.user
 
+        // 2️⃣ Si todavía no está en el estado (por ejemplo, justo después de login),
+        //    lo pedimos directamente a Supabase
+        if (!user) {
+            try {
+                const { data, error } = await supabase.auth.getSession()
+
+                if (error) {
+                    console.error('[AuthContext] Error obteniendo sesión en updatePerfil:', error)
+                }
+
+                user = data?.session?.user || null
+            } catch (e) {
+                console.error(
+                    '[AuthContext] Error inesperado en getSession() dentro de updatePerfil:',
+                    e
+                )
+            }
+        }
+
+        // 3️⃣ Si AÚN así no hay usuario, entonces sí es un error real
+        if (!user?.id) {
+            throw new Error('No hay usuario')
+        }
+
+        const userId = user.id
         const perfilAntes = perfil ? { ...perfil } : {}
 
         const payload = {
             ...partial,
-            email: session.user.email,
+            email: user.email,
             actualizado_en: new Date().toISOString(),
         }
 
         const { data, error } = await supabase
             .from('perfiles')
             .upsert(
-                { id: session.user.id, ...payload },
+                { id: userId, ...payload }, // 👈 en tu tabla usas `id` = uuid del user
                 { onConflict: 'id' }
             )
             .select()
             .single()
 
-        if (error) throw error
+        if (error) {
+            console.error('[AuthContext] Error actualizando perfil:', error)
+            throw error
+        }
 
         setPerfil(data)
 
-        // 🔁 Regenerar planes en background (NO bloquea la UI)
+        // 4️⃣ Regenerar planes si han cambiado campos clave
         try {
-            const userId = session.user.id
             await Promise.all([
                 actualizarRutinaPorCambioPerfil(perfilAntes, data, userId),
                 actualizarDietaPorCambioPerfil(perfilAntes, data, userId),
@@ -144,7 +195,6 @@ export function AuthProvider({ children }) {
 
         const init = async () => {
             console.log('[AuthContext] init() -> comprobando sesión inicial')
-            setLoading(true)
             try {
                 const { data } = await supabase.auth.getSession()
                 const sess = data?.session ?? null
@@ -154,7 +204,6 @@ export function AuthProvider({ children }) {
                 setSession(sess)
 
                 if (sess?.user?.id) {
-                    // no hacemos await para no bloquear loading
                     cargarPerfil(sess.user.id)
                 } else {
                     setPerfil(null)
@@ -185,7 +234,7 @@ export function AuthProvider({ children }) {
             } else {
                 setPerfil(null)
             }
-            // 🔸 NO tocamos loading aquí
+            // loading solo se controla en init()
         })
 
         const subscription = sub?.subscription
@@ -199,6 +248,7 @@ export function AuthProvider({ children }) {
     }, [cargarPerfil])
 
     // 🔹 LOGIN con bloqueo si el email NO está confirmado
+    //     y bloqueo si la cuenta está desactivada (activo = false)
     const login = async (email, password) => {
         console.log('[AuthContext] login ->', email)
 
@@ -223,6 +273,7 @@ export function AuthProvider({ children }) {
             confirmed_at: user.confirmed_at,
         })
 
+        // 1️⃣ Email sin confirmar → bloqueamos
         if (!user.email_confirmed_at && !user.confirmed_at) {
             console.warn('[AuthContext] Email NO confirmado, cerrando sesión inmediata')
             await supabase.auth.signOut()
@@ -231,6 +282,39 @@ export function AuthProvider({ children }) {
             throw err
         }
 
+        // 2️⃣ Comprobamos si la cuenta está desactivada en `perfiles`
+        try {
+            const { data: perfilRow, error: perfilError } = await supabase
+                .from('perfiles')
+                .select('activo')
+                .eq('id', user.id)
+                .maybeSingle()
+
+            if (perfilError && perfilError.code !== 'PGRST116') {
+                console.error('[AuthContext] Error leyendo perfil en login:', perfilError)
+                throw perfilError
+            }
+
+            if (perfilRow && perfilRow.activo === false) {
+                console.warn(
+                    '[AuthContext] Cuenta desactivada. Cerrando sesión y bloqueando login.'
+                )
+                await supabase.auth.signOut()
+                const err = new Error('Esta cuenta ha sido desactivada.')
+                err.code = 'account_inactive'
+                throw err
+            }
+        } catch (e) {
+            // Si es nuestro error de cuenta inactiva o algo serio, lo re-lanzamos
+            if (e.code === 'account_inactive') {
+                throw e
+            }
+            console.error('[AuthContext] Error comprobando activo en login:', e)
+            // si hay un problema raro en la consulta, mejor no dejar entrar
+            throw new Error('No se ha podido verificar el estado de tu cuenta.')
+        }
+
+        // 3️⃣ Todo OK → guardamos sesión
         if (data.session) {
             setSession(data.session)
         }
@@ -289,36 +373,53 @@ export function AuthProvider({ children }) {
     // 🔹 LOGOUT
     const logout = async () => {
         console.log('[AuthContext] logout llamado')
-        setLoading(true)
 
         try {
-            // 🔧 Limpieza inmediata del estado del contexto
-            setSession(null)
-            setPerfil(null)
-            localStorage.removeItem('perfilDraft')
-
-            // 🔧 Limpiar claves de Supabase en localStorage
-            try {
-                if (typeof window !== 'undefined') {
-                    Object.keys(localStorage)
-                        .filter((k) => k.startsWith('sb-'))
-                        .forEach((k) => localStorage.removeItem(k))
-                }
-            } catch (e) {
-                console.error('[AuthContext] Error limpiando localStorage:', e)
-            }
-
-            // 🔧 Cerrar sesión en Supabase (global por si acaso)
-            const { error } = await supabase.auth.signOut({ scope: 'global' })
+            const { error } = await supabase.auth.signOut()
             if (error) {
                 console.error('[AuthContext] Error en supabase.auth.signOut():', error)
             }
         } catch (e) {
-            console.error('[AuthContext] Error inesperado en logout():', e)
-        } finally {
-            console.log('[AuthContext] logout -> loading = false')
-            setLoading(false)
+            console.error('[AuthContext] Error inesperado en signOut():', e)
         }
+
+        try {
+            if (typeof window !== 'undefined') {
+                Object.keys(localStorage)
+                    .filter((k) => k.startsWith('sb-'))
+                    .forEach((k) => localStorage.removeItem(k))
+            }
+        } catch (e) {
+            console.error('[AuthContext] Error limpiando localStorage:', e)
+        }
+
+        setPerfil(null)
+        setSession(null)
+        localStorage.removeItem('perfilDraft')
+    }
+
+    // 🔹 Desactivar cuenta (activo = false)
+    const desactivarCuenta = async () => {
+        if (!session?.user?.id) throw new Error('No hay usuario')
+        const userId = session.user.id
+
+        console.log('[AuthContext] desactivarCuenta ->', userId)
+
+        const { error } = await supabase
+            .from('perfiles')
+            .update({
+                activo: false,
+                actualizado_en: new Date().toISOString(),
+            })
+            .eq('id', userId)
+
+        if (error) {
+            console.error('[AuthContext] Error desactivando cuenta:', error)
+            throw error
+        }
+
+        // Forzamos en el estado local para que salte el useEffect de cuenta inactiva
+        setPerfil((prev) => (prev ? { ...prev, activo: false } : prev))
     }
 
     const resendConfirmEmail = async (email) => {
@@ -347,18 +448,15 @@ export function AuthProvider({ children }) {
 
     const esAdmin =
         !!session &&
-        (
-            session.user?.email === 'admin@plexus.es' ||
-            perfil?.es_admin === true
-        )
+        (session.user?.email === 'admin@plexus.es' || perfil?.es_admin === true)
 
+    //  Cuenta no activa (bloqueada por admin o auto-eliminada)
     useEffect(() => {
         if (!loading && perfil && perfil.activo === false) {
-            console.warn('[AuthContext] Usuario bloqueado por admin. Cerrando sesión.')
-            alert('Tu cuenta ha sido bloqueada por el administrador.')
+            console.warn('[AuthContext] Cuenta desactivada. Cerrando sesión.')
             logout()
         }
-    }, [perfil, loading]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [perfil, loading]) // logout se captura del cierre
 
     const value = {
         session,
@@ -370,6 +468,7 @@ export function AuthProvider({ children }) {
         resendConfirmEmail,
         updatePerfil,
         uploadAvatar,
+        desactivarCuenta,
         esAdmin,
     }
 

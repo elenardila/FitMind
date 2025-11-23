@@ -519,41 +519,77 @@ export default function Dieta() {
                     </>
                 )}
 
-                {/* Versión simplificada SOLO PARA PDF (oculta, fondo blanco, texto oscuro) */}
+                {/* =====================================================
+   VERSIÓN SIMPLIFICADA SOLO PARA PDF – DIETAS
+   (Cards compactas, 3 columnas, colores oscuros)
+===================================================== */}
                 {semana.length > 0 && (
                     <div
                         ref={pdfRef}
-                        className="fixed -left-[9999px] top-0 bg-white text-slate-900 p-6 w-[800px]"
+                        className="fixed -left-[9999px] top-0 w-[780px] bg-white text-slate-900 p-6"
                     >
-                        <h1 className="text-2xl font-bold mb-4">
+                        {/* Cabecera */}
+                        <h1 className="text-xl font-bold mb-2">
                             {planActual ? extraerNombrePlan(planActual) : 'Plan de dieta'}
                         </h1>
+                        <p className="text-xs text-slate-600 mb-4">
+                            Generado con FitMind · {new Date().toLocaleDateString()}
+                        </p>
 
-                        {semana.map((d, i) => (
-                            <div key={`pdf-dieta-dia-${d.dia || i}-${i}`} className="mb-4">
-                                <h2 className="text-lg font-semibold mb-1">
-                                    {d.dia} ({d.kcal} kcal)
-                                </h2>
-                                <ul className="text-sm list-disc pl-4 space-y-1">
-                                    {d.comidas?.map((c, j) => (
-                                        <li key={`pdf-dieta-${d.dia || i}-comida-${j}`}>
-                                            {c}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
+                        {/* Grid de 3 columnas tipo cards */}
+                        <div className="grid grid-cols-3 gap-4">
+                            {semana.map((d, i) => (
+                                <article
+                                    key={`pdf-dieta-${d.dia || i}-${i}`}
+                                    className="border border-slate-300 rounded-lg p-3 flex flex-col gap-2"
+                                >
+                                    {/* Cabecera día + mini imagen */}
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <h2 className="text-sm font-semibold text-slate-900">
+                                                {d.dia}
+                                            </h2>
+                                            <p className="text-[11px] text-slate-600">
+                                                {d.kcal} kcal
+                                            </p>
+                                        </div>
 
-                        <div className="mt-4 border-t pt-2">
-                            <p className="text-sm">
-                                Total semanal aproximado: <strong>{kcalTot} kcal</strong>
+                                        {d.imagenUrl && (
+                                            <img
+                                                src={d.imagenUrl}
+                                                alt={`Plato del día ${d.dia}`}
+                                                className="w-14 h-14 rounded-md object-cover border border-slate-300"
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Comidas */}
+                                    <ul className="text-[11px] space-y-1 mt-1">
+                                        {d.comidas?.map((c, j) => (
+                                            <li
+                                                key={`pdf-dieta-${d.dia}-comida-${j}`}
+                                                className="list-disc ml-4 text-slate-700"
+                                            >
+                                                {c}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </article>
+                            ))}
+                        </div>
+
+                        {/* Pie de página */}
+                        <div className="mt-4 border-t border-slate-200 pt-2">
+                            <p className="text-sm font-medium text-slate-800">
+                                Total semanal aproximado: {kcalTot} kcal
                             </p>
-                            <p className="mt-2 text-xs text-slate-500">
+                            <p className="mt-1 text-[10px] text-slate-500">
                                 *Esta dieta es orientativa y no sustituye el consejo de un profesional sanitario.
                             </p>
                         </div>
                     </div>
                 )}
+
 
                 {/* Historial de dietas */}
                 <div className="mt-10 card card-pad">
