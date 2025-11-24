@@ -177,7 +177,7 @@ export default function AdminUsuarios() {
 
   return (
     <section className="section">
-      <div className="container space-y-6">
+      <div className="container px-6 md:px-12 lg:px-20 space-y-6">
         <header>
           <h1 className="section-title text-brand">Panel de administración</h1>
           <p className="text-sm text-text-muted">

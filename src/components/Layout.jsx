@@ -180,7 +180,7 @@ export default function Layout({ children }) {
                         <Link className="hover:text-brand" to="/politica">
                             Privacidad
                         </Link>
-                        <a className="hover:text-brand" href="mailto:hola@fitmind.local">
+                        <a className="hover:text-brand" href="mailto:hola@fitmind.es">
                             Contacto
                         </a>
                     </nav>

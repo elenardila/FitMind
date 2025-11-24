@@ -299,7 +299,7 @@ export default function Entrenamiento() {
     // ==========================================================
     return (
         <section className="section">
-            <div className="container">
+            <div className="container px-6 md:px-12 lg:px-20">
                 {/* Cabecera */}
                 <div className="flex items-end justify-between gap-4">
                     <div>
@@ -315,11 +315,11 @@ export default function Entrenamiento() {
                             <p className="mt-2 text-sm text-brand flex items-center gap-2">
                                 <FiBookOpen />
                                 <span>
-                  Rutina actual:{' '}
+                                    Rutina actual:{' '}
                                     <span className="font-semibold">
-                    {extraerNombrePlan(planActual)}
-                  </span>
-                </span>
+                                        {extraerNombrePlan(planActual)}
+                                    </span>
+                                </span>
                             </p>
                         )}
                     </div>
@@ -347,12 +347,13 @@ export default function Entrenamiento() {
 
                 {/* Toast / notificaciones flotantes */}
                 {(mensaje || error) && (
-                    <div className="fixed bottom-4 right-4 z-50 flex justify-end px-4 pointer-events-none">
+                    <div className="fixed bottom-4 right-4 z-40 flex justify-end px-4 pointer-events-none">
                         <div
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm shadow-lg border pointer-events-auto
-        ${mensaje
-                                ? 'bg-emerald-900/80 border-emerald-500 text-emerald-50'
-                                : 'bg-red-900/80 border-red-500 text-red-50'
+        ${
+                                mensaje
+                                    ? 'bg-emerald-900/80 border-emerald-500 text-emerald-50'
+                                    : 'bg-red-900/80 border-red-500 text-red-50'
                             }`}
                         >
                             {mensaje ? (
@@ -364,7 +365,6 @@ export default function Entrenamiento() {
                         </div>
                     </div>
                 )}
-
 
                 {/* Cargando */}
                 {cargandoInicial && (
@@ -387,9 +387,7 @@ export default function Entrenamiento() {
                     </p>
                 )}
 
-                {/* =====================================================
-             RUTINA ACTUAL (visible en pantalla)
-        ===================================================== */}
+                {/* RUTINA ACTUAL (visible en pantalla) */}
                 {rutina.length > 0 && (
                     <div className="mt-8 grid gap-6 md:grid-cols-2">
                         {rutina.map((r, i) => (
@@ -436,15 +434,11 @@ export default function Entrenamiento() {
                     </div>
                 )}
 
-                {/* =====================================================
-   VERSIÓN SIMPLIFICADA SOLO PARA PDF
-   (tipo cards, con fotos, fondo blanco y texto oscuro)
-===================================================== */}
+                {/* VERSIÓN SIMPLIFICADA SOLO PARA PDF (cards) */}
                 <div
                     ref={pdfRef}
                     className="fixed -left-[9999px] top-0 w-[780px] bg-white text-slate-900 p-6"
                 >
-                    {/* Cabecera */}
                     <h1 className="text-xl font-bold mb-2">
                         {planActual ? extraerNombrePlan(planActual) : 'Rutina semanal'}
                     </h1>
@@ -452,14 +446,12 @@ export default function Entrenamiento() {
                         Generada con FitMind · {new Date().toLocaleDateString()}
                     </p>
 
-                    {/* Grid de cards (2 columnas) */}
                     <div className="grid grid-cols-2 gap-4">
                         {rutina.map((r, i) => (
                             <article
                                 key={`pdf-${r.dia || 'dia'}-${i}`}
                                 className="border border-slate-300 rounded-lg p-3 flex flex-col gap-2"
                             >
-                                {/* Cabecera día + mini imagen */}
                                 <div className="flex items-start justify-between gap-2 mb-1">
                                     <div>
                                         <h2 className="text-sm font-semibold text-slate-900">
@@ -478,7 +470,6 @@ export default function Entrenamiento() {
                                     )}
                                 </div>
 
-                                {/* Lista de ejercicios */}
                                 <ul className="space-y-1 text-xs">
                                     {r.ejercicios.map((e, j) => (
                                         <li
@@ -494,8 +485,8 @@ export default function Entrenamiento() {
                                                 )}
                                             </div>
                                             <span className="text-[11px] font-semibold text-slate-800">
-                {e.series}
-              </span>
+                                                {e.series}
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
@@ -503,17 +494,13 @@ export default function Entrenamiento() {
                         ))}
                     </div>
 
-                    {/* Pie */}
                     <p className="mt-4 text-[10px] text-slate-500 border-t border-slate-200 pt-2">
                         Esta rutina es orientativa y no sustituye el consejo de un profesional
                         cualificado. Ajusta pesos y volumen a tu nivel.
                     </p>
                 </div>
 
-
-                {/* =====================================================
-             HISTORIAL
-        ===================================================== */}
+                {/* HISTORIAL */}
                 <div className="mt-10 card card-pad">
                     <h2 className="font-semibold text-lg flex items-center gap-2">
                         <FiCalendar />
@@ -565,19 +552,17 @@ export default function Entrenamiento() {
                 </div>
             </div>
 
-            {/* =====================================================
-          MODAL: NUEVA RUTINA
-      ===================================================== */}
+            {/* MODAL: NUEVA RUTINA */}
             {mostrarModalNueva && (
                 <div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
                     onClick={() => {
                         setMostrarModalNueva(false)
                         setNombreNuevaRutina('')
                     }}
                 >
                     <div
-                        className="w-full max-w-md rounded-xl bg-slate-900 p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700"
+                        className="w-full max-w-md rounded-xl bg-slate-900 p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-start justify-between mb-4">
@@ -626,16 +611,14 @@ export default function Entrenamiento() {
                 </div>
             )}
 
-            {/* =====================================================
-          MODAL: VER RUTINA
-      ===================================================== */}
+            {/* MODAL: VER RUTINA */}
             {mostrarModalVer && planSeleccionado && (
                 <div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
                     onClick={() => setMostrarModalVer(false)}
                 >
                     <div
-                        className="w-full max-w-4xl rounded-xl bg-slate-900 p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700"
+                        className="w-full max-w-4xl rounded-xl bg-slate-900 p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-start justify-between mb-4">
@@ -662,7 +645,6 @@ export default function Entrenamiento() {
                                     key={`modal-${r.dia}-${i}`}
                                     className="card card-pad"
                                 >
-                                    {/* Cabecera del día con mini imagen */}
                                     <div className="flex items-center justify-between gap-3">
                                         <h3 className="font-semibold text-lg text-brand">
                                             {r.dia}
@@ -714,16 +696,14 @@ export default function Entrenamiento() {
                 </div>
             )}
 
-            {/* =====================================================
-          MODAL: CONFIRMAR ELIMINACIÓN
-      ===================================================== */}
+            {/* MODAL: CONFIRMAR ELIMINACIÓN */}
             {mostrarModalEliminar && planAEliminar && (
                 <div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
                     onClick={cerrarModalEliminar}
                 >
                     <div
-                        className="w-full max-w-md rounded-xl bg-slate-900 p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700"
+                        className="w-full max-w-md rounded-xl bg-slate-900 p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-start justify-between mb-4">
@@ -745,8 +725,8 @@ export default function Entrenamiento() {
                         <p className="text-sm text-slate-200">
                             ¿Seguro que quieres eliminar la rutina{' '}
                             <span className="font-semibold">
-                "{extraerNombrePlan(planAEliminar)}"
-              </span>
+                                "{extraerNombrePlan(planAEliminar)}"
+                            </span>
                             ? Esta acción no se puede deshacer.
                         </p>
 
@@ -771,16 +751,14 @@ export default function Entrenamiento() {
                 </div>
             )}
 
-            {/* =====================================================
-          MODAL: CONFIRMAR DESCARGA PDF
-      ===================================================== */}
+            {/* MODAL: CONFIRMAR DESCARGA PDF */}
             {mostrarModalPdf && (
                 <div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
                     onClick={() => !generandoPdf && setMostrarModalPdf(false)}
                 >
                     <div
-                        className="w-full max-w-md rounded-xl bg-slate-900 p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700"
+                        className="w-full max-w-md rounded-xl bg-slate-900 p-6 shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-start justify-between mb-4">

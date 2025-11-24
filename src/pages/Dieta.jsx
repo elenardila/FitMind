@@ -97,18 +97,16 @@ export default function Dieta() {
     const { session, perfil } = useAuth()
     const userId = session?.user?.id
 
-    const [semana, setSemana] = useState([]) // array { dia, kcal, comidas[], imagenUrl? }
-    const [planActual, setPlanActual] = useState(null) // fila de la tabla planes
+    const [semana, setSemana] = useState([])
+    const [planActual, setPlanActual] = useState(null)
     const [historial, setHistorial] = useState([])
 
     const [cargandoInicial, setCargandoInicial] = useState(true)
     const [generando, setGenerando] = useState(false)
 
-    // Notificaciones tipo toast (como en Perfil)
     const [mensaje, setMensaje] = useState('')
     const [error, setError] = useState('')
 
-    // Modales
     const [mostrarModalNueva, setMostrarModalNueva] = useState(false)
     const [nombreNuevaDieta, setNombreNuevaDieta] = useState('')
 
@@ -118,18 +116,15 @@ export default function Dieta() {
     const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false)
     const [planAEliminar, setPlanAEliminar] = useState(null)
 
-    // Modal: confirmar descarga PDF
     const [mostrarModalPdf, setMostrarModalPdf] = useState(false)
     const [generandoPdf, setGenerandoPdf] = useState(false)
 
-    // Ref para la versión simplificada que exportaremos a PDF
     const pdfRef = useRef(null)
 
-    // Helpers: compatibilidad de formato de datos
     const extraerDiasDesdeDatos = (datos) => {
         if (!datos) return []
-        if (Array.isArray(datos)) return datos // formato antiguo: array directo
-        if (Array.isArray(datos.dias)) return datos.dias // formato nuevo: { nombre, dias: [...] }
+        if (Array.isArray(datos)) return datos
+        if (Array.isArray(datos.dias)) return datos.dias
         return []
     }
 
@@ -144,7 +139,6 @@ export default function Dieta() {
 
     const kcalTot = semana.reduce((acc, d) => acc + (d.kcal || 0), 0)
 
-    // Autocierre de notificaciones
     useEffect(() => {
         if (!mensaje && !error) return
         const t = setTimeout(() => {
@@ -154,7 +148,6 @@ export default function Dieta() {
         return () => clearTimeout(t)
     }, [mensaje, error])
 
-    // Cargar último plan + historial al entrar
     useEffect(() => {
         const cargar = async () => {
             if (!userId) {
@@ -167,7 +160,6 @@ export default function Dieta() {
             try {
                 const ultimo = await obtenerUltimoPlan(userId, 'dieta')
                 if (ultimo) {
-                    console.log('[Dieta] Último plan cargado:', ultimo)
                     setPlanActual(ultimo)
                     const dias = extraerDiasDesdeDatos(ultimo.datos)
                     setSemana(dias.length ? dias : semanaMock)
@@ -177,7 +169,6 @@ export default function Dieta() {
                 }
 
                 const lista = await obtenerPlanes(userId, 'dieta')
-                console.log('[Dieta] Historial de dietas cargado:', lista)
                 setHistorial(lista || [])
             } catch (e) {
                 console.error('[Dieta] Error al cargar datos iniciales:', e)
@@ -189,7 +180,6 @@ export default function Dieta() {
         cargar()
     }, [userId])
 
-    // Generar nueva dieta (desde modal)
     const manejarConfirmarNuevaDieta = async (e) => {
         e.preventDefault()
 
@@ -214,12 +204,9 @@ export default function Dieta() {
         setGenerando(true)
 
         try {
-            console.log('[Dieta] Generando plan de dieta para perfil:', perfil)
             const nuevaSemana = await generarDietaGemini(perfil)
-            console.log('[Dieta] Dieta generada (respuesta de Gemini):', nuevaSemana)
 
             if (!Array.isArray(nuevaSemana) || nuevaSemana.length === 0) {
-                console.error('[Dieta] La respuesta de Gemini no es un array válido')
                 setError('La IA no ha devuelto un plan de dieta válido.')
                 setSemana([])
                 return
@@ -230,9 +217,7 @@ export default function Dieta() {
                 dias: nuevaSemana,
             }
 
-            console.log('[Dieta] Guardando dieta en Supabase con datosPlan:', datosPlan)
             const plan = await guardarPlan(userId, 'dieta', datosPlan)
-            console.log('[Dieta] Plan guardado en Supabase:', plan)
 
             setPlanActual(plan)
             const dias = extraerDiasDesdeDatos(plan.datos)
@@ -251,7 +236,6 @@ export default function Dieta() {
         }
     }
 
-    // Ver dieta desde historial
     const manejarVerPlan = (plan) => {
         setPlanSeleccionado(plan)
         setMostrarModalVer(true)
@@ -259,7 +243,6 @@ export default function Dieta() {
         setError('')
     }
 
-    // Empezar dieta desde el modal
     const manejarEmpezarPlanSeleccionado = () => {
         if (!planSeleccionado) return
         setPlanActual(planSeleccionado)
@@ -269,7 +252,6 @@ export default function Dieta() {
         setMostrarModalVer(false)
     }
 
-    // Eliminar dieta: abrir modal
     const solicitarEliminarPlan = (plan) => {
         setPlanAEliminar(plan)
         setMostrarModalEliminar(true)
@@ -277,7 +259,6 @@ export default function Dieta() {
         setError('')
     }
 
-    // Confirmar eliminación
     const confirmarEliminarPlan = async () => {
         if (!planAEliminar) return
         try {
@@ -302,9 +283,6 @@ export default function Dieta() {
         setMostrarModalEliminar(false)
     }
 
-    // ------------------------------
-    // Generar PDF de la dieta actual (usa versión simplificada oculta)
-    // ------------------------------
     const generarPdfDieta = async () => {
         setMensaje('')
         setError('')
@@ -343,11 +321,9 @@ export default function Dieta() {
             let heightLeft = imgHeight
             let position = 0
 
-            // Primera página
             pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
             heightLeft -= pdfHeight
 
-            // Páginas adicionales si hace falta
             while (heightLeft > 0) {
                 position -= pdfHeight
                 pdf.addPage()
@@ -372,7 +348,7 @@ export default function Dieta() {
 
     return (
         <section className="section">
-            <div className="container">
+            <div className="container px-6 md:px-12 lg:px-20">
                 {/* Cabecera */}
                 <div className="flex items-end justify-between gap-4">
                     <div>
@@ -388,11 +364,11 @@ export default function Dieta() {
                             <p className="mt-2 text-sm text-brand flex items-center gap-2">
                                 <FiBookOpen />
                                 <span>
-                  Dieta actual:{' '}
+                                    Dieta actual:{' '}
                                     <span className="font-semibold">
-                    {extraerNombrePlan(planActual)}
-                  </span>
-                </span>
+                                        {extraerNombrePlan(planActual)}
+                                    </span>
+                                </span>
                             </p>
                         )}
                     </div>
@@ -418,12 +394,13 @@ export default function Dieta() {
 
                 {/* Toast / notificaciones flotantes */}
                 {(mensaje || error) && (
-                    <div className="fixed bottom-4 right-4 z-50 flex justify-end px-4 pointer-events-none">
+                    <div className="fixed bottom-4 right-4 z-40 flex justify-end px-4 pointer-events-none">
                         <div
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm shadow-lg border pointer-events-auto
-        ${mensaje
-                                ? 'bg-emerald-900/80 border-emerald-500 text-emerald-50'
-                                : 'bg-red-900/80 border-red-500 text-red-50'
+        ${
+                                mensaje
+                                    ? 'bg-emerald-900/80 border-emerald-500 text-emerald-50'
+                                    : 'bg-red-900/80 border-red-500 text-red-50'
                             }`}
                         >
                             {mensaje ? (
@@ -435,7 +412,6 @@ export default function Dieta() {
                         </div>
                     </div>
                 )}
-
 
                 {/* Cargando inicial */}
                 {cargandoInicial && (
@@ -475,9 +451,9 @@ export default function Dieta() {
                                         <div>
                                             <h2 className="font-semibold text-lg text-brand">{d.dia}</h2>
                                             <span className="inline-flex items-center gap-1 text-sm text-text-muted dark:text-white/70">
-                        <FiHeart className="text-brand" />
+                                                <FiHeart className="text-brand" />
                                                 {d.kcal} kcal
-                      </span>
+                                            </span>
                                         </div>
 
                                         {d.imagenUrl && (
@@ -519,16 +495,12 @@ export default function Dieta() {
                     </>
                 )}
 
-                {/* =====================================================
-   VERSIÓN SIMPLIFICADA SOLO PARA PDF – DIETAS
-   (Cards compactas, 3 columnas, colores oscuros)
-===================================================== */}
+                {/* VERSIÓN SIMPLIFICADA SOLO PARA PDF – DIETAS */}
                 {semana.length > 0 && (
                     <div
                         ref={pdfRef}
                         className="fixed -left-[9999px] top-0 w-[780px] bg-white text-slate-900 p-6"
                     >
-                        {/* Cabecera */}
                         <h1 className="text-xl font-bold mb-2">
                             {planActual ? extraerNombrePlan(planActual) : 'Plan de dieta'}
                         </h1>
@@ -536,14 +508,12 @@ export default function Dieta() {
                             Generado con FitMind · {new Date().toLocaleDateString()}
                         </p>
 
-                        {/* Grid de 3 columnas tipo cards */}
                         <div className="grid grid-cols-3 gap-4">
                             {semana.map((d, i) => (
                                 <article
                                     key={`pdf-dieta-${d.dia || i}-${i}`}
                                     className="border border-slate-300 rounded-lg p-3 flex flex-col gap-2"
                                 >
-                                    {/* Cabecera día + mini imagen */}
                                     <div className="flex items-start justify-between gap-2">
                                         <div>
                                             <h2 className="text-sm font-semibold text-slate-900">
@@ -563,7 +533,6 @@ export default function Dieta() {
                                         )}
                                     </div>
 
-                                    {/* Comidas */}
                                     <ul className="text-[11px] space-y-1 mt-1">
                                         {d.comidas?.map((c, j) => (
                                             <li
@@ -578,7 +547,6 @@ export default function Dieta() {
                             ))}
                         </div>
 
-                        {/* Pie de página */}
                         <div className="mt-4 border-t border-slate-200 pt-2">
                             <p className="text-sm font-medium text-slate-800">
                                 Total semanal aproximado: {kcalTot} kcal
@@ -589,7 +557,6 @@ export default function Dieta() {
                         </div>
                     </div>
                 )}
-
 
                 {/* Historial de dietas */}
                 <div className="mt-10 card card-pad">
@@ -644,7 +611,7 @@ export default function Dieta() {
             {/* MODAL: Generar nueva dieta */}
             {mostrarModalNueva && (
                 <div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
                     onClick={() => {
                         setMostrarModalNueva(false)
                         setNombreNuevaDieta('')
@@ -714,7 +681,7 @@ export default function Dieta() {
             {/* MODAL: Ver dieta */}
             {mostrarModalVer && planSeleccionado && (
                 <div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
                     onClick={() => setMostrarModalVer(false)}
                 >
                     <div
@@ -749,8 +716,8 @@ export default function Dieta() {
                                         <div>
                                             <h3 className="font-semibold text-lg text-brand">{d.dia}</h3>
                                             <span className="text-sm text-text-muted dark:text-white/70">
-                        {d.kcal} kcal
-                      </span>
+                                                {d.kcal} kcal
+                                            </span>
                                         </div>
 
                                         {d.imagenUrl && (
@@ -796,7 +763,7 @@ export default function Dieta() {
             {/* MODAL: Confirmar eliminación de dieta */}
             {mostrarModalEliminar && planAEliminar && (
                 <div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
                     onClick={cerrarModalEliminar}
                 >
                     <div
@@ -822,8 +789,8 @@ export default function Dieta() {
                         <p className="text-sm text-slate-200">
                             ¿Seguro que quieres eliminar la dieta{' '}
                             <span className="font-semibold">
-                "{extraerNombrePlan(planAEliminar)}"
-              </span>
+                                "{extraerNombrePlan(planAEliminar)}"
+                            </span>
                             ? Esta acción no se puede deshacer.
                         </p>
 
@@ -851,7 +818,7 @@ export default function Dieta() {
             {/* MODAL: Confirmar descarga PDF */}
             {mostrarModalPdf && (
                 <div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
                     onClick={() => !generandoPdf && setMostrarModalPdf(false)}
                 >
                     <div

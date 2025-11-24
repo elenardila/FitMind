@@ -1,10 +1,9 @@
-// src/pages/Control.jsx
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { obtenerUltimoPlan } from '../lib/planesService'
 
-// 🔢 IMC = peso(kg) / (altura(m)²)
+// IMC = peso(kg) / (altura(m)²)
 function calcularIMC(pesoKg, alturaCm) {
     if (!pesoKg || !alturaCm) return null
     const alturaM = alturaCm / 100
@@ -12,7 +11,7 @@ function calcularIMC(pesoKg, alturaCm) {
     return Number((pesoKg / (alturaM * alturaM)).toFixed(1))
 }
 
-// 📊 Clasificación simple del IMC
+//  Clasificación simple del IMC
 function clasificarIMC(imc) {
     if (imc == null) return null
     if (imc < 18.5) return 'Bajo peso'
@@ -21,7 +20,7 @@ function clasificarIMC(imc) {
     return 'Obesidad'
 }
 
-// 🔥 Calorías diarias recomendadas según objetivo
+//  Calorías diarias recomendadas según objetivo
 function calcularKcalDiarias({ pesoKg, alturaCm, edad, sexo, nivelActividad, objetivo }) {
     if (!pesoKg || !alturaCm || !edad) return null
 
@@ -52,7 +51,7 @@ function calcularKcalDiarias({ pesoKg, alturaCm, edad, sexo, nivelActividad, obj
     return Math.round(mantenimiento * factorObjetivo)
 }
 
-// 🗓️ Día actual
+//  Día actual
 function obtenerInfoSemana() {
     const hoy = new Date()
     const nombreLower = hoy.toLocaleDateString('es-ES', { weekday: 'long' })
@@ -93,7 +92,7 @@ function Stat({ label, value }) {
     )
 }
 
-// 🧠 Extrae el array de días desde la estructura JSON del plan
+//  Extrae el array de días desde la estructura JSON del plan
 function extraerDias(plan, tipo) {
     if (!plan || !plan.datos) return null
 
@@ -133,7 +132,7 @@ export default function Control() {
 
     const { nombreDia, diaSemana, porcentaje } = useMemo(() => obtenerInfoSemana(), [])
 
-    // 🧮 Datos usuario
+    //  Datos usuario
     const {
         pesoKg, alturaCm, edad, sexo, nivelActividad, objetivo,
         imc, imcLabel, kcalObjetivo
@@ -174,7 +173,7 @@ export default function Control() {
         },
     ]
 
-    // 🔄 Resumen de hoy
+    // Resumen de hoy
     useEffect(() => {
         if (!userId) return
 
@@ -222,8 +221,8 @@ export default function Control() {
 
     return (
         <section className="section">
-            <div className="container">
-                <h1 className="section-title">Tu panel de control</h1>
+            <div className="container px-6 md:px-12 lg:px-20">
+                <h1 className="section-title">Dashboard</h1>
 
                 {faltanDatos && (
                     <p className="mt-4 text-sm text-amber-500">
