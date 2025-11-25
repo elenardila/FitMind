@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { FiMenu, FiX } from 'react-icons/fi'
 import { useState } from 'react'
@@ -6,9 +6,14 @@ import { useState } from 'react'
 export default function Layout({ children }) {
     const { session, perfil, loading, logout, esAdmin } = useAuth()
     const navigate = useNavigate()
+    const location = useLocation()
     const [open, setOpen] = useState(false)
 
     const isLogged = session?.user && perfil?.id
+
+    // Rutas en las que, si hay sesión, NO queremos mostrar dashboard/avatar/cerrar sesión
+    const authOnlyRoutes = ['/nueva-clave', '/auth/callback']
+    const hideUserNav = authOnlyRoutes.includes(location.pathname)
 
     const avatarSrc = perfil?.avatar_url
         ? perfil.avatar_url
@@ -33,7 +38,6 @@ export default function Layout({ children }) {
             {/* NAVBAR */}
             <nav className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800">
                 <div className="container flex items-center justify-between h-16 md:h-20">
-
                     {/* Logo */}
                     <Link
                         to="/"
@@ -50,6 +54,8 @@ export default function Layout({ children }) {
                     <div className="hidden md:flex items-center gap-4">
                         {loading ? (
                             <span className="text-sm text-slate-400">Comprobando sesión…</span>
+                        ) : isLogged && hideUserNav ? (
+                            <></>
                         ) : !isLogged ? (
                             <>
                                 <NavButton to="/login">Iniciar sesión</NavButton>
@@ -79,9 +85,9 @@ export default function Layout({ children }) {
                                         className="h-8 w-8 rounded-full border border-slate-700 object-cover"
                                     />
                                     <span className="text-sm">
-                                        Hola{perfil?.nombre ? `, ${perfil.nombre}` : ''}
+                    Hola{perfil?.nombre ? `, ${perfil.nombre}` : ''}
                                         {perfil?.es_admin ? ' · Admin' : ''}
-                                    </span>
+                  </span>
                                 </button>
 
                                 <button
@@ -111,11 +117,12 @@ export default function Layout({ children }) {
                 {open && (
                     <div className="md:hidden border-t border-slate-800 bg-slate-950/95">
                         <div className="container py-4 flex flex-col gap-2">
-
                             {loading ? (
                                 <span className="text-sm text-slate-400 text-center">
-                                    Comprobando sesión…
-                                </span>
+                  Comprobando sesión…
+                </span>
+                            ) : isLogged && hideUserNav ? (
+                                <></>
                             ) : !isLogged ? (
                                 <>
                                     <NavButton to="/login">Iniciar sesión</NavButton>
@@ -147,9 +154,9 @@ export default function Layout({ children }) {
                                             className="h-10 w-10 rounded-full border border-slate-700 object-cover"
                                         />
                                         <span className="text-sm">
-                                            Hola{perfil?.nombre ? `, ${perfil.nombre}` : ''}
+                      Hola{perfil?.nombre ? `, ${perfil.nombre}` : ''}
                                             {perfil?.es_admin ? ' · Admin' : ''}
-                                        </span>
+                    </span>
                                     </button>
 
                                     <button
