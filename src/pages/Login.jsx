@@ -719,7 +719,7 @@ export default function Login() {
 
                                     // 2️⃣ Si no hay perfil o está activo → permitimos el reset
                                     await supabase.auth.resetPasswordForEmail(correo, {
-                                        redirectTo: 'https://fitmind-six.vercel.app/nueva-clave',
+                                        redirectTo: `${window.location.origin}/nueva-clave`,
                                     })
 
                                     pushOk('Hemos enviado un correo para restablecer tu contraseña.')
