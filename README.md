@@ -182,7 +182,7 @@ Se mantuvo una reunión semanal, siguiendo un plan estructurado para el desarrol
 5. Semana 5 — 04/11/2025
    - Diseño y componentes UI: Navbar, Footer, cards y botones reutilizables; responsive y modo oscuro.
 6. Semana 6 — 11/11/2025
-  - Autenticación y gestión de sesiones con Supabase Auth; pruebas iniciales de login.
+   - Autenticación y gestión de sesiones con Supabase Auth; pruebas iniciales de login.
 7. Semana 7 — 18/11/2025
    - Integración de lógica de planes y suscripciones; roles (`admin`, `usuario`).
 8. Semana 8 — 24/11/2025
@@ -192,6 +192,21 @@ Se mantuvo una reunión semanal, siguiendo un plan estructurado para el desarrol
 
 ### Notas del seguimiento
 - Cada sesión siguió la estructura: resumen de avances, demo funcional, bloqueo/riesgos y tareas para la siguiente semana.
+
+---
+## 🤖 NotebookLM — Asistente inteligente del proyecto
+
+[![NotebookLM](https://img.shields.io/badge/NotebookLM-IA-blue?logo=google)](https://notebooklm.google.com/notebook/a3d02a60-61da-4d41-8b80-2a1be15c4538)
+
+**Prueba la IA preparada con la documentación del proyecto:**  
+https://notebooklm.google.com/notebook/a3d02a60-61da-4d41-8b80-2a1be15c4538
+
+> Esta instancia de NotebookLM ha sido alimentada con los manuales y recursos del TFG (manual técnico, manual de usuario, diagramas y ejemplos). Es una forma innovadora de consultar el proyecto con contexto específico.
+
+### Qué incluye
+- Manual técnico y manual de usuario indexados.
+- Prompt para preguntas contextuales.
+- Videopresentación y audio tipo 'podcast' con explicaciones sobre FitMind.
 
 ---
 
