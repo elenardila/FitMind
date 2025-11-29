@@ -24,6 +24,17 @@ FitMind combina una arquitectura moderna y modular:
 
 ---
 
+## 🚀 Despliegue
+
+[![Despliegue en Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://fitmind-six.vercel.app/)
+
+Accede a la versión en producción: https://fitmind-six.vercel.app/
+
+
+![Previsualización de la app](public/img/preview.png)
+
+---
+
 ## 🧱 Estructura del proyecto
 
 ```bash
@@ -32,10 +43,12 @@ fitmind/
 │
 ├── public/               # Recursos estáticos (imágenes, logos…)
 │
+├── docs/                 # Documentación (manual de usuario y manual técnico)
+│
 ├── src/
-│   ├── components/       # Layout, Navbar, Footer, etc.
+│   ├── components/       # Layout, Modal, etc.
 │   ├── pages/            # Home, Login, Control, Dieta, Entrenamiento, Política, 404
-│   ├── lib/              # Cliente Supabase
+│   ├── lib/              # Cliente Supabase y cliente Gemini
 │   ├── context/          # Contexto de Autenticación (AuthContext)
 │   ├── App.jsx           # Enrutamiento principal
 │   ├── main.jsx          # Entrada React
@@ -85,7 +98,7 @@ Tablas principales:
 
 | Tabla     | Descripción                                                 |
 |----------|-------------------------------------------------------------|
-| perfiles | Datos del usuario \(nombre, avatar, rol, suscripción\)      |
+| perfiles | Datos del usuario \(nombre, avatar, rol, etc.\)      |
 | medidas  | Progreso semanal \(peso, grasa, kcal\)                      |
 | planes   | Planes de entrenamiento y dieta \(JSON por semana\)         |
 
@@ -97,11 +110,11 @@ Políticas RLS:
 
 ## 👤 Roles de usuario
 
-| Rol       | Permisos                                                |
-|-----------|---------------------------------------------------------|
-| Usuario   | Ver landing page para suscribirse                       |
-| Suscrito  | Acceso completo a rutinas, dietas y control de progreso |
-| Admin     | Gestionar suscripciones y perfiles de otros usuarios    |
+| Rol        | Permisos                                                |
+|------------|---------------------------------------------------------|
+| Usuario    | Ver landing page para registrarse                       |
+| Registrado | Acceso completo a rutinas, dietas y control de progreso |
+| Admin      | Gestionar suscripciones y perfiles de otros usuarios    |
 
 ---
 
@@ -131,43 +144,63 @@ Políticas RLS:
 
 - ✅ Vistas: inicio, login, control, dieta, entrenamiento, política, 404
 - ✅ Navegación con React Router
-- ✅ Componentes reutilizables \(Navbar, Footer, Card, Button\)
-- ✅ Estilo responsive con modo claro y oscuro
+- ✅ Componentes reutilizables \(Navbar, Modal, RequireAdmin, RequireAuth\)
+- ✅ Estilo responsive con modo oscuro
 - ✅ Supabase con RLS y roles
-- ✅ Sistema de suscripción y rol de administrador
-- 🚧 Próximamente: generación automática de planes personalizados por IA
+- ✅ Sistema de autenticación y rol de administrador
+- ✅ Generación automática de planes personalizados por IA
 
 ---
-
-## 📸 Capturas \(pendiente\)
-
-Añade imágenes en `public/img/` y enlázalas aquí:
 
 | Vista            | Descripción                             |
 |------------------|-----------------------------------------|
 | 🏠 Inicio        | Presentación y CTA principal             |
 | 🔐 Login / Registro | Acceso y autenticación de usuario    |
-| 📊 Panel control | Seguimiento de progreso y medidas        |
+| 📊 Dashboard | Seguimiento de progreso y medidas        |
 | 🍎 Plan de dieta | Visualización del menú semanal           |
 | 🏋️ Entrenamiento | Rutinas personalizadas                  |
 | ⚙️ Administración | Gestión de usuarios y suscripciones     |
 
 ---
 
-## 👩‍💻 Autoría
+## 🧑‍🏫 Tutorías
 
-- Elena Ardila Delgado
 - Tutor: Francisco José Mera Calderón
-- CFGS en Desarrollo de Aplicaciones Web \(DAW\)
-- 📍 IES Albarregas – Mérida \(España\)
-- 📘 Proyecto TFG: FitMind AI – Entrenador y nutricionista inteligente \(2025\)
+
+### Resumen de las tutorías
+
+Se mantuvo una reunión semanal, siguiendo un plan estructurado para el desarrollo del TFG.
+
+1. Semana 1 — 07/10/2025
+   - Inicio y planificación: definición de alcance, objetivos y criterios de evaluación.
+2. Semana 2 — 14/10/2025
+   - Elección de stack y estructura básica del proyecto (React \+ Vite, Tailwind, Supabase).
+3. Semana 3 — 21/10/2025
+   - Modelado de datos en Supabase: tablas `perfiles`, `medidas`, `planes` y políticas RLS.
+4. Semana 4 — 28/10/2025
+   - Implementación de vistas principales: Landing, Control, Dieta, Entrenamiento.
+5. Semana 5 — 04/11/2025
+   - Diseño y componentes UI: Navbar, Footer, cards y botones reutilizables; responsive y modo oscuro.
+6. Semana 6 — 11/11/2025
+  - Autenticación y gestión de sesiones con Supabase Auth; pruebas iniciales de login.
+7. Semana 7 — 18/11/2025
+   - Integración de lógica de planes y suscripciones; roles (`admin`, `usuario`).
+8. Semana 8 — 24/11/2025
+   - Pruebas, corrección de bugs y ajustes en políticas RLS; revisión de sesiones persistentes.
+9. Semana 9 — 29/11/2025
+   - Documentación final: consolidación del manual técnico y de usuario; preparación para entrega y defensa.
+
+### Notas del seguimiento
+- Cada sesión siguió la estructura: resumen de avances, demo funcional, bloqueo/riesgos y tareas para la siguiente semana.
 
 ---
 
-## 🪄 Inspiración
+## 👩‍💻 Autoría
 
-> “El cuerpo logra lo que la mente cree. FitMind nace para demostrarlo.”  
-> — Elena Ardila Delgado
+- Elena Ardila Delgado
+- CFGS en Desarrollo de Aplicaciones Web \(DAW\)
+- 📍 IES Albarregas – Mérida \(España\)
+- 📘 Proyecto TFG: FitMind AI – Entrenador y nutricionista inteligente \(2025\)
 
 ---
 
