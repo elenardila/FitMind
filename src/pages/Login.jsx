@@ -64,14 +64,14 @@ export default function Login() {
     const passValida = password.length >= 6 && !/\s/.test(password)
     const passCoincide = modo === 'login' ? true : password === password2
 
-    // ✅ Campos obligatorios inválidos (para bordes en brand)
+    // Campos obligatorios inválidos (para bordes en brand)
     const emailInvalido = intentoEnvio && !emailValido
     const passInvalida = intentoEnvio && !passValida
     const pass2Invalida = intentoEnvio && modo === 'registro' && (!password2 || !passCoincide)
     const terminosInvalidos = intentoEnvio && modo === 'registro' && !aceptaTerminos
     const legalInvalido = intentoEnvio && modo === 'registro' && !aceptaLegal
 
-    // 👇 si estás en registro: contraseña ok + términos aceptados
+    // si estás en registro: contraseña ok + términos aceptados
     const puedeEnviar = useMemo(() => {
         if (loading) return false
         if (!emailValido) return false
@@ -80,7 +80,7 @@ export default function Login() {
         return passValida && passCoincide && aceptaTerminos && aceptaLegal
     }, [loading, emailValido, passValida, passCoincide, aceptaTerminos, aceptaLegal, modo])
 
-    // 👇 si cambia la URL (por ejemplo, entras desde /login?mode=registro) cambiamos el modo
+    // si cambia la URL (por ejemplo, entras desde /login?mode=registro) cambiamos el modo
     useEffect(() => {
         const params = new URLSearchParams(location.search)
         const modeParam = params.get('mode') === 'registro' ? 'registro' : 'login'
@@ -118,7 +118,7 @@ export default function Login() {
         if (msg) showToast('success', msg)
     }
 
-    // 🌈 Clase común para inputs en modo claro/oscuro + borde dinámico
+    // Clase común para inputs en modo claro/oscuro + borde dinámico
     const baseInputClasses =
         'w-full rounded-md bg-white dark:bg-white/10 text-slate-900 dark:text-white border'
     const defaultBorderClasses = 'border-slate-300 dark:border-white/20'
@@ -143,11 +143,11 @@ export default function Login() {
             const correo = emailLimpio
 
             if (modo === 'login') {
-                // ⬇️ Destino según admin o usuario normal
+                // Destino según admin o usuario normal
                 const session = await login(correo, password)
                 const userEmail = session?.user?.email || correo
 
-                // 🔄 Aplicar perfilDraft si existe (nombre, edad, etc)
+                // Aplicar perfilDraft si existe (nombre, edad, etc)
                 try {
                     const draftStr = localStorage.getItem('perfilDraft')
                     if (draftStr) {
@@ -184,7 +184,7 @@ export default function Login() {
                 return
             }
 
-            // 👉 register AHORA nunca deja sesión activa y lanza error claro si el usuario ya existe
+            // register nunca deja sesión activa y lanza error claro si el usuario ya existe
             await register(correo, password)
 
             // guarda draft de perfil o actualiza si hay sesión
@@ -241,7 +241,7 @@ export default function Login() {
                     msg.includes('already exists') ||
                     msg.includes('user_already_exists'))
             ) {
-                // 💡 Correo ya registrado: mostramos modal específico
+                // Correo ya registrado: mostramos modal específico
                 setModalExisteOpen(true)
                 setError('')
             } else if (
@@ -273,7 +273,7 @@ export default function Login() {
                 <form onSubmit={handleSubmit} className="card card-pad space-y-6">
                     {modo === 'login' ? (
                         // ============================
-                        // 🔑 MODO LOGIN (una columna)
+                        // MODO LOGIN
                         // ============================
                         <div className="space-y-4">
                             {/* 📧 Email */}
@@ -322,7 +322,7 @@ export default function Login() {
                         </div>
                     ) : (
                         // ==============================
-                        // 🧾 MODO REGISTRO (DOS COLUMNAS)
+                        // MODO REGISTRO (DOS COLUMNAS)
                         // ==============================
                         <div className="grid gap-6 md:grid-cols-2">
                             {/* 🔹 Columna izquierda: acceso + legales */}
@@ -342,7 +342,7 @@ export default function Login() {
                                     />
                                 </div>
 
-                                {/* 🔒 Contraseña */}
+                                {/*  Contraseña */}
                                 <div>
                                     <label className="block text-sm mb-1">
                                         Contraseña <span className="text-brand">*</span>
@@ -357,7 +357,7 @@ export default function Login() {
                                     />
                                 </div>
 
-                                {/* 🔁 Confirmar contraseña */}
+                                {/*  Confirmar contraseña */}
                                 <div>
                                     <label className="block text-sm mb-1">
                                         Repite la contraseña <span className="text-brand">*</span>
@@ -372,7 +372,7 @@ export default function Login() {
                                     />
                                 </div>
 
-                                {/* ✅ Términos / Legal */}
+                                {/*  Términos / Legal */}
                                 <div className="space-y-2 text-sm mt-2">
                                     <label className="flex items-start gap-3">
                                         <input
@@ -414,7 +414,7 @@ export default function Login() {
                                 </div>
                             </div>
 
-                            {/* 🔹 Columna derecha: datos de perfil */}
+                            {/*  Columna derecha: datos de perfil */}
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm mb-1">Nombre</label>

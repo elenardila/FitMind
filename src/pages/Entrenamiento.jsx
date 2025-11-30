@@ -295,7 +295,7 @@ export default function Entrenamiento() {
     }
 
     // ==========================================================
-    //              🚀 RETURN: UI DE LA PÁGINA
+    //              RETURN: UI DE LA PÁGINA
     // ==========================================================
     return (
         <section className="section">

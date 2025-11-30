@@ -17,20 +17,6 @@ function BadgeEstado({ activo }) {
   )
 }
 
-function BadgeRol({ esAdmin }) {
-  const base =
-    'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold'
-  return esAdmin ? (
-    <span className={`${base} bg-purple-100 text-purple-800`}>
-      Admin
-    </span>
-  ) : (
-    <span className={`${base} bg-slate-100 text-slate-800`}>
-      Usuario
-    </span>
-  )
-}
-
 export default function AdminUsuarios() {
   const { perfil } = useAuth()
 

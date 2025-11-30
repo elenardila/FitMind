@@ -52,7 +52,7 @@ export default function Perfil() {
     const [modalEliminarOpen, setModalEliminarOpen] = useState(false)
     const [eliminando, setEliminando] = useState(false)
 
-    // 🔄 cuando cambie "perfil" desde el contexto, rehidratamos el formulario
+    // cuando cambie "perfil" desde el contexto, rehidratamos el formulario
     useEffect(() => {
         if (!perfil) return
         setForm({
@@ -68,7 +68,7 @@ export default function Perfil() {
         })
     }, [perfil])
 
-    // ⏱️ Autocierre de notificaciones (mensaje / error)
+    // ️ Autocierre de notificaciones (mensaje / error)
     useEffect(() => {
         if (!mensaje && !error) return
         const t = setTimeout(() => {
@@ -119,11 +119,11 @@ export default function Perfil() {
                 alergias: form.alergias?.length ? form.alergias : null,
             }
 
-            // 👇 AuthContext.updatePerfil ya se encarga de regenerar dieta + entrenamiento
+            // AuthContext.updatePerfil ya se encarga de regenerar dieta + entrenamiento
             await updatePerfil(payload)
 
             const marca = formatearMarcaTiempo()
-            setMensaje(`Perfil actualizado correctamente (${marca}) ✅`)
+            setMensaje(`Perfil actualizado correctamente (${marca})`)
         } catch (err) {
             console.error('[Perfil] Error en guardar perfil:', err)
             setError(err.message || 'No se pudo guardar el perfil.')
@@ -427,8 +427,6 @@ export default function Perfil() {
                                     try {
                                         setEliminando(true)
                                         await desactivarCuenta()
-                                        // 👉 El AuthContext hará logout al ver activo = false.
-                                        // No usamos alert, mantenemos el mismo estilo visual.
                                     } catch (e) {
                                         console.error('[Perfil] Error al desactivar cuenta:', e)
                                         setError(

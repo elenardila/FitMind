@@ -13,7 +13,7 @@ export default function NuevaClave() {
 
     const navigate = useNavigate()
 
-    // 1️⃣ Comprobar que el enlace es válido y que Supabase ha creado una sesión temporal
+    // Comprobar que el enlace es válido y que Supabase ha creado una sesión temporal
     useEffect(() => {
         const checkUser = async () => {
             try {
@@ -72,7 +72,7 @@ export default function NuevaClave() {
 
             setMensaje('Contraseña actualizada correctamente. Te redirigimos al inicio de sesión.')
 
-            // 2️⃣ Cerrar sesión y mandar al login tras unos segundos
+            // Cerrar sesión y mandar al login tras unos segundos
             setTimeout(async () => {
                 try {
                     await supabase.auth.signOut()

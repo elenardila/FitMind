@@ -10,12 +10,12 @@ export default function AuthCallback() {
         const procesar = async () => {
             try {
                 // Supabase ya ha procesado el token de la URL.
-                // Por coherencia con tu flujo, cerramos sesión igualmente.
+                // cerramos sesión igualmente.
                 await supabase.auth.signOut()
             } catch (e) {
                 console.error('[AuthCallback] Error en signOut:', e)
             } finally {
-                // En cualquier caso, mandamos al login.
+                // En cualquier caso, redirijo al login.
                 navigate('/login', { replace: true })
             }
         }
