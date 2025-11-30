@@ -41,7 +41,7 @@ async function actualizarRutinaPorCambioPerfil(perfilAntes, perfilDespues, userI
         return null
     }
 
-    // 👇 mismo formato que Entrenamiento.jsx
+    // mismo formato que Entrenamiento.jsx
     const datosPlan = {
         nombre: 'Rutina autogenerada',
         dias: nuevaRutina,
@@ -82,7 +82,7 @@ export function AuthProvider({ children }) {
     const [perfil, setPerfil] = useState(null)
     const [loading, setLoading] = useState(true)
 
-    // 🔹 Cargar perfil desde la tabla `perfiles`
+    //  Cargar perfil desde la tabla `perfiles`
     const cargarPerfil = useCallback(async (userId) => {
         if (!userId) {
             setPerfil(null)
@@ -122,12 +122,12 @@ export function AuthProvider({ children }) {
         }
     }, [])
 
-    // 🔹 Crear / actualizar perfil del usuario logueado
+    // Crear / actualizar perfil del usuario logueado
     const updatePerfil = async (partial) => {
-        // 1️⃣ Intentar usar el usuario del estado
+        // Intentar usar el usuario del estado
         let user = session?.user
 
-        // 2️⃣ Si todavía no está en el estado (por ejemplo, justo después de login),
+        // Si todavía no está en el estado (por ejemplo, justo después de login),
         //    lo pedimos directamente a Supabase
         if (!user) {
             try {
@@ -146,7 +146,7 @@ export function AuthProvider({ children }) {
             }
         }
 
-        // 3️⃣ Si AÚN así no hay usuario, entonces sí es un error real
+        // Si aún así no hay usuario, entonces sí es un error real
         if (!user?.id) {
             throw new Error('No hay usuario')
         }
@@ -163,7 +163,7 @@ export function AuthProvider({ children }) {
         const { data, error } = await supabase
             .from('perfiles')
             .upsert(
-                { id: userId, ...payload }, // 👈 en tu tabla usas `id` = uuid del user
+                { id: userId, ...payload }, //
                 { onConflict: 'id' }
             )
             .select()
@@ -176,7 +176,7 @@ export function AuthProvider({ children }) {
 
         setPerfil(data)
 
-        // 4️⃣ Regenerar planes si han cambiado campos clave
+        // Regenerar planes si han cambiado campos clave
         try {
             await Promise.all([
                 actualizarRutinaPorCambioPerfil(perfilAntes, data, userId),
@@ -189,7 +189,7 @@ export function AuthProvider({ children }) {
         return data
     }
 
-    // 🔹 Inicialización + suscripción a cambios de auth (ESTABLE)
+    // Inicialización + suscripción a cambios de auth
     useEffect(() => {
         let isMounted = true
 
@@ -247,7 +247,7 @@ export function AuthProvider({ children }) {
         }
     }, [cargarPerfil])
 
-    // 🔹 LOGIN con bloqueo si el email NO está confirmado
+    // LOGIN con bloqueo si el email no está confirmado
     //     y bloqueo si la cuenta está desactivada (activo = false)
     const login = async (email, password) => {
         console.log('[AuthContext] login ->', email)
@@ -273,7 +273,7 @@ export function AuthProvider({ children }) {
             confirmed_at: user.confirmed_at,
         })
 
-        // 1️⃣ Email sin confirmar → bloqueamos
+        // Email sin confirmar = bloqueo inmediato
         if (!user.email_confirmed_at && !user.confirmed_at) {
             console.warn('[AuthContext] Email NO confirmado, cerrando sesión inmediata')
             await supabase.auth.signOut()
@@ -282,7 +282,7 @@ export function AuthProvider({ children }) {
             throw err
         }
 
-        // 2️⃣ Comprobamos si la cuenta está desactivada en `perfiles`
+        // Comprobamos si la cuenta está desactivada en `perfiles`
         try {
             const { data: perfilRow, error: perfilError } = await supabase
                 .from('perfiles')
@@ -314,7 +314,7 @@ export function AuthProvider({ children }) {
             throw new Error('No se ha podido verificar el estado de tu cuenta.')
         }
 
-        // 3️⃣ Todo OK → guardamos sesión
+        // Todo OK, guardamos sesión
         if (data.session) {
             setSession(data.session)
         }
@@ -322,11 +322,11 @@ export function AuthProvider({ children }) {
         return data.session
     }
 
-    // 🔹 REGISTRO robusto
+    // REGISTRO robusto
     const register = async (email, password) => {
         console.log('[AuthContext] register ->', email)
 
-        // 1️⃣ Comprobación previa en perfiles
+        // Comprobación previa en perfiles
         try {
             const { data: existing } = await supabase
                 .from('perfiles')
@@ -346,7 +346,7 @@ export function AuthProvider({ children }) {
             }
         }
 
-        // 2️⃣ Registro en Supabase Auth
+        // Registro en Supabase Auth
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -360,7 +360,7 @@ export function AuthProvider({ children }) {
             throw error
         }
 
-        // 3️⃣ Seguridad: fuera cualquier sesión después del registro
+        // Seguridad: fuera cualquier sesión después del registro
         try {
             await supabase.auth.signOut()
         } catch (e) {
@@ -370,7 +370,7 @@ export function AuthProvider({ children }) {
         return data
     }
 
-    // 🔹 LOGOUT
+    // LOGOUT
     const logout = async () => {
         console.log('[AuthContext] logout llamado')
 
@@ -398,7 +398,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('perfilDraft')
     }
 
-    // 🔹 Desactivar cuenta (activo = false)
+    // Desactivar cuenta (activo = false)
     const desactivarCuenta = async () => {
         if (!session?.user?.id) throw new Error('No hay usuario')
         const userId = session.user.id
