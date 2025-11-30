@@ -3,17 +3,17 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim()
 
 if (!apiKey) {
-  console.error('❌ Falta VITE_GEMINI_API_KEY en las variables de entorno.')
+  console.error('Falta VITE_GEMINI_API_KEY en las variables de entorno.')
 }
 
 const genAI = new GoogleGenerativeAI(apiKey)
 
-// 👉 Usamos un modelo vigente (1.5 está retirado)
+// Usamos un modelo vigente
 const modelo = genAI.getGenerativeModel({
   model: 'gemini-2.0-flash',
 })
 
-// 🔧 Saca el JSON aunque venga envuelto en ```json ... ```
+// Saca el JSON aunque venga envuelto en ```json ... ```
 function extraerJsonDeRespuesta(texto) {
   if (!texto || typeof texto !== 'string') {
     throw new Error('La respuesta de Gemini está vacía o no es texto.')
@@ -42,7 +42,7 @@ function extraerJsonDeRespuesta(texto) {
   }
 }
 
-// 🔹 Función principal que usas en Entrenamiento + AuthContext
+// Función principal que uso en Entrenamiento + AuthContext
 export async function generarRutinaGemini(perfil) {
   if (!perfil) {
     throw new Error('No hay perfil disponible para generar la rutina.')

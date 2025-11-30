@@ -11,7 +11,7 @@ export default function Layout({ children }) {
 
     const isLogged = session?.user && perfil?.id
 
-    // Rutas en las que, si hay sesión, NO queremos mostrar dashboard/avatar/cerrar sesión
+    // Rutas en las que, si hay sesión, no queremos mostrar dashboard/avatar/cerrar sesión
     const authOnlyRoutes = ['/nueva-clave', '/auth/callback']
     const hideUserNav = authOnlyRoutes.includes(location.pathname)
 

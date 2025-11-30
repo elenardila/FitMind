@@ -30,8 +30,6 @@ export const IMAGENES_DIAS_ENTRENAMIENTO = [
   'https://ocdkltlwmqrxlyglsdcu.supabase.co/storage/v1/object/public/entrenamientos/entrenamientos/entrenamiento-26.jpg',
 ]
 
-// 👉 De momento las de dieta las dejamos vacías o con TODO.
-// Cuando tengas las imágenes de dieta, metes aquí sus URLs reales.
 export const IMAGENES_DIAS_DIETA = [
   'https://ocdkltlwmqrxlyglsdcu.supabase.co/storage/v1/object/public/dietas/dietas/dieta-01.jpg',
   'https://ocdkltlwmqrxlyglsdcu.supabase.co/storage/v1/object/public/dietas/dietas/dieta-02.jpg',
@@ -103,7 +101,7 @@ export function asignarImagenesPorDia(datosPlan, tipoPlan) {
       ? IMAGENES_DIAS_ENTRENAMIENTO
       : IMAGENES_DIAS_DIETA
 
-  // Por si acaso: si no hay lista (por ejemplo, aún no has definido las de dieta),
+  // Por si no hay lista,
   // devolvemos el plan tal cual para no romper nada.
   if (!lista || lista.length === 0) {
     return datosPlan

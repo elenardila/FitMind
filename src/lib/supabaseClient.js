@@ -16,7 +16,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     },
 })
 
-// 🔍 Verificación en consola (solo entorno local)
+// Verificación en consola
 if (import.meta.env.DEV) {
     console.log('🔧 Cliente Supabase inicializado con URL:', supabaseUrl)
 }

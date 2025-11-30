@@ -2,7 +2,7 @@
 import { supabase } from './supabaseClient'
 import { asignarImagenesPorDia } from './imagenesDias'
 
-// 🔢 Calcula el lunes de la semana actual (inicio de semana)
+// Calcula el lunes de la semana actual (inicio de semana)
 function getSemanaInicioISO() {
   const hoy = new Date()
   const diaSemana = hoy.getDay() || 7 // Domingo = 0 -> 7
@@ -12,13 +12,11 @@ function getSemanaInicioISO() {
   return lunes.toISOString().slice(0, 10)
 }
 
-// 🔹 Guarda el plan SIEMPRE como registro nuevo (sin machacar otros)
+// Guarda el plan SIEMPRE como registro nuevo (sin machacar otros)
 export async function guardarPlan(usuarioId, tipo, datos) {
   const semanaInicio = getSemanaInicioISO()
 
-  // 💡 Añadimos imagenUrl a cada día del plan (según tipo)
-  // - Si tipo === 'entrenamiento' → usará las 12 imágenes de entrenamiento
-  // - Si tipo === 'dieta' (u otro) y no hay lista → devuelve datos tal cual
+  // Añadimos imagenUrl a cada día del plan (según tipo)
   const datosConImagenes = asignarImagenesPorDia(datos, tipo)
 
   const { data, error } = await supabase
@@ -42,14 +40,13 @@ export async function guardarPlan(usuarioId, tipo, datos) {
   return data
 }
 
-// 🔹 Devuelve el último plan de un tipo para un usuario
+// Devuelve el último plan de un tipo para un usuario
 export async function obtenerUltimoPlan(usuarioId, tipo) {
   const { data, error } = await supabase
     .from('planes')
     .select('*')
     .eq('usuario_id', usuarioId)
     .eq('tipo', tipo)
-    // 👉 mejor por creado_en, que es un timestamp único por inserción
     .order('creado_en', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -63,14 +60,13 @@ export async function obtenerUltimoPlan(usuarioId, tipo) {
   return data || null
 }
 
-// 🔹 Historial de planes
+// Historial de planes
 export async function obtenerPlanes(usuarioId, tipo) {
   const { data, error } = await supabase
     .from('planes')
     .select('*')
     .eq('usuario_id', usuarioId)
     .eq('tipo', tipo)
-    // 👉 igual, ordenamos por fecha de creación más reciente primero
     .order('creado_en', { ascending: false })
 
   if (error) {
@@ -81,31 +77,7 @@ export async function obtenerPlanes(usuarioId, tipo) {
   return data || []
 }
 
-// 🔹 Actualiza sólo los datos/json de un plan concreto
-export async function actualizarPlan(planId, usuarioId, datos, tipo) {
-  // 👀 IMPORTANTE: ahora también enriquecemos aquí por si regenera días
-  // y quieres que sigan teniendo imágenes.
-  const datosConImagenes = asignarImagenesPorDia(datos, tipo)
-
-  const { data, error } = await supabase
-    .from('planes')
-    .update({
-      datos: datosConImagenes,
-    })
-    .eq('id', planId)
-    .eq('usuario_id', usuarioId)
-    .select('*')
-    .single()
-
-  if (error) {
-    console.error('[planesService] Error en actualizarPlan:', error)
-    throw error
-  }
-
-  return data
-}
-
-// 🔹 Eliminar un plan concreto
+// Eliminar un plan concreto
 export async function eliminarPlan(planId, usuarioId) {
   const { error } = await supabase
     .from('planes')
